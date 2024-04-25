@@ -22,19 +22,22 @@ class Snake:
         self.old_log_probs = []
 
     def move(self, env: BattleSnakeEnv):
-        state, reward = env.step()
+        state, reward = env.state, env.reward
 
         self.states.append(state)
         self.rewards.append(reward)
 
         return self.model(env)
 
+    def end(self, env):
+        pass
+
 
 if __name__ == "__main__":
     from server import run_server
 
     snake = Snake()
-    run_server({"move": snake.move})
+    run_server({"move": snake.move, "end": snake.end})
 
     for episode in range(100):
         # BattleSnakeEnv.reset()

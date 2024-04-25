@@ -40,6 +40,9 @@ def run_server(handlers: typing.Dict):
     @app.post("/end")
     def on_end():
         print("GAME OVER\n")
+        game_state = request.get_json()
+        app.env.update(game_state)
+        handlers["end"](app.env)
         return "ok"
 
     @app.after_request
