@@ -1,11 +1,7 @@
 import torch
+import time
 import torch.nn as nn
 from env import BattleSnakeEnv
-from multiprocessing import Process
-
-
-def reset_env():
-    BattleSnakeEnv.reset()
 
 
 class PPO(nn.Module):
@@ -32,27 +28,20 @@ class Snake:
         self.rewards.append(reward)
 
         # action = self.model(env)
-        print(env)
 
         return {"move": "right"}
 
     def end(self, env: BattleSnakeEnv):
         state, reward = env.state, env.reward
-        print(env)
+        time.sleep(1)
+
+        print(len(self.rewards), self.rewards)
 
 
 if __name__ == "__main__":
-    from server import run_server
+    from server import start_server
 
     model = PPO()
     snake = Snake(model)
 
-    # Start the reset function in a separate process
-    reset_process = Process(target=reset_env)
-    reset_process.start()
-
-    # Start the Flask server
-    run_server({"move": snake.move, "end": snake.end})
-
-    # Wait for the reset process to finish
-    reset_process.join()
+    start_server({"move": snake.move, "end": snake.end})

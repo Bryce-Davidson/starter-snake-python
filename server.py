@@ -7,7 +7,7 @@ from flask import Flask
 from flask import request
 
 
-def run_server(handlers: typing.Dict):
+def start_server(handlers: typing.Dict):
     app = Flask("Battlesnake")
     app.env = None
 
@@ -26,7 +26,6 @@ def run_server(handlers: typing.Dict):
     def on_start():
         game_state = request.get_json()
         app.env = BattleSnakeEnv(game_state)
-        handlers["start"](game_state)
         return "ok"
 
     @app.post("/move")
