@@ -1,12 +1,13 @@
 import numpy as np
 import typing
+import json
 
 
 class BattleSnakeEnv:
-    YOU_CODE = 1
+    YOU_CODE = -1
     FOOD_CODE = 2
-    ENEMY_CODE = -1
-    HAZARD_CODE = -2
+    ENEMY_CODE = -2
+    HAZARD_CODE = -3
     EMPTY_CODE = 0
 
     def clamp(self, x, y):
@@ -38,6 +39,8 @@ class BattleSnakeEnv:
             self.state[p["y"]][p["x"]] = BattleSnakeEnv.FOOD_CODE
 
         for snake in self.board["snakes"]:
+            if snake["id"] == self.you["id"]:
+                continue
             for p in snake["body"]:
                 x, y = self.clamp(p["x"], p["y"])
                 self.state[p["y"]][p["x"]] = BattleSnakeEnv.ENEMY_CODE

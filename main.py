@@ -24,6 +24,8 @@ class Snake:
     def move(self, env: BattleSnakeEnv):
         state, reward = env.state, env.reward
 
+        print(env)
+
         self.states.append(state)
         self.rewards.append(reward)
 
@@ -34,8 +36,6 @@ class Snake:
     def end(self, env: BattleSnakeEnv):
         state, reward = env.state, env.reward
         time.sleep(1)
-
-        print(len(self.rewards), self.rewards)
 
 
 if __name__ == "__main__":
