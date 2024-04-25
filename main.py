@@ -1,4 +1,4 @@
-from state import State
+from env import BattleSnakeEnv
 import typing
 
 
@@ -6,16 +6,12 @@ class Snake:
     def __init__(self):
         pass
 
-    def move(self, game_state: typing.Dict):
-        state = State(game_state)
-
+    def step(self, env: BattleSnakeEnv):
         return {"move": "up"}
 
 
-# Start server when `python main.py` is run
 if __name__ == "__main__":
-    snake = Snake()
-
     from server import run_server
 
-    run_server({"move": snake.move})
+    snake = Snake()
+    run_server({"move": snake.step})

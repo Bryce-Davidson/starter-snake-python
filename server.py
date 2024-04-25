@@ -2,12 +2,14 @@ import os
 import logging
 import typing
 
+from env import BattleSnakeEnv
 from flask import Flask
 from flask import request
 
 
 def run_server(handlers: typing.Dict):
     app = Flask("Battlesnake")
+    app.env = None
 
     @app.get("/")
     def on_info():
@@ -22,14 +24,17 @@ def run_server(handlers: typing.Dict):
 
     @app.post("/start")
     def on_start():
-        # game_state = request.get_json()
-        print("GAME START")
+        game_state = request.get_json()
+        app.env = BattleSnakeEnv(game_state)
+        handlers["start"](game_state)
         return "ok"
 
     @app.post("/move")
     def on_move():
         game_state = request.get_json()
-        return handlers["move"](game_state)
+        app.env.update(game_state)
+
+        return handlers["move"](app.env.state)
 
     @app.post("/end")
     def on_end():
