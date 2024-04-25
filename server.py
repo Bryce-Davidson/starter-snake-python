@@ -33,8 +33,9 @@ def run_server(handlers: typing.Dict):
     def on_move():
         game_state = request.get_json()
         app.env.update(game_state)
+        action = handlers["move"](app.env)
 
-        return handlers["move"](app.env)
+        return action
 
     @app.post("/end")
     def on_end():
