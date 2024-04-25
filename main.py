@@ -13,8 +13,8 @@ class PPO(nn.Module):
 
 
 class Snake:
-    def __init__(self):
-        self.model = PPO()
+    def __init__(self, model):
+        self.model = model
 
         self.states = []
         self.actions = []
@@ -27,16 +27,21 @@ class Snake:
         self.states.append(state)
         self.rewards.append(reward)
 
-        return self.model(env)
+        action = self.model(env)
 
-    def end(self, env):
+        return action
+
+    def end(self, env: BattleSnakeEnv):
+        state, reward = env.state, env.reward
         pass
 
 
 if __name__ == "__main__":
     from server import run_server
 
-    snake = Snake()
+    model = PPO()
+    snake = Snake(model)
+
     run_server({"move": snake.move, "end": snake.end})
 
     for episode in range(100):
