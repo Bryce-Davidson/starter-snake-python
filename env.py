@@ -13,11 +13,6 @@ class BattleSnakeEnv:
         self.data = data
         self.turn = data["turn"]
 
-        self.terminated = False
-        self.truncated = False
-        self.info = None
-        self.done = False
-
         self.board = data["board"]
         self.maxY = self.board["height"]
         self.maxX = self.board["width"]
@@ -56,4 +51,4 @@ class BattleSnakeEnv:
         self.__init__(data)
 
     def step(self):
-        return self.state, self.reward, self.terminated, self.info, self.done
+        return self.state, self.reward
