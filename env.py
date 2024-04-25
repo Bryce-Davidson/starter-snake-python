@@ -1,6 +1,7 @@
 import numpy as np
 import typing
 import os
+import subprocess
 
 
 class BattleSnakeEnv:
@@ -10,9 +11,36 @@ class BattleSnakeEnv:
     HAZARD_CODE = -2
     EMPTY_CODE = 0
 
-    @classmethod
-    def reset(cls):
-        pass
+    @staticmethod
+    def reset(cls, args: typing.List[str] = None):
+        print("Resetting server...")
+        args = [
+            "./battlesnake",
+            "play",
+            "--name",
+            "Python Starter Project",
+            "--url",
+            "http://localhost:8000",
+            "-g",
+            "solo",
+            "--browser",
+            "--board-url",
+            "http://localhost:5173/",
+            "--foodSpawnChance",
+            0,
+            "--minimumFood",
+            0,
+        ]
+
+        output = subprocess.run(
+            args,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+
+        print(output.stdout)
 
     def clamp(self, x, y):
         return min(max(x, 0), self.maxX - 1), min(max(y, 0), self.maxY - 1)

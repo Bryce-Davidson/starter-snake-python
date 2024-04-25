@@ -46,6 +46,7 @@ if __name__ == "__main__":
 
     run_server({"move": snake.move, "end": snake.end})
 
+    BattleSnakeEnv().reset()
+
     # for episode in range(100):
-    # BattleSnakeEnv.reset()
     # pass
