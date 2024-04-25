@@ -12,10 +12,19 @@ class PPO(nn.Module):
         pass
 
 
+class Snake:
+    def __init__(self):
+        self.model = PPO()
+
+    def step(self, env: BattleSnakeEnv):
+        observation, reward, terminated, info, done = env.step()
+        return self.model(env)
+
+
 if __name__ == "__main__":
     from server import run_server
 
-    snake = PPO()
-    run_server({"move": snake.forward})
+    snake = Snake()
+    run_server({"move": snake.step})
 
     BattleSnakeEnv.reset()
