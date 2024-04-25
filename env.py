@@ -45,9 +45,22 @@ class BattleSnakeEnv:
 
     @property
     def reward(self):
+        x = self.head["x"]
+        y = self.head["y"]
+
         if self.health == 0:
             return -1
-        return self.health + self.turn + self.length
+
+        if self.state[y][x] == BattleSnakeEnv.ENEMY_CODE:
+            return -1
+
+        if self.state[y][x] == BattleSnakeEnv.HAZARD_CODE:
+            return -1
+
+        if x < 0 or x >= self.maxX or y < 0 or y >= self.maxY:
+            return -1
+
+        return 1
 
     def update(self, data: typing.Dict):
         self.__init__(data)
