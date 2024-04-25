@@ -45,6 +45,8 @@ class BattleSnakeEnv:
 
     @property
     def reward(self):
+        if self.health == 0:
+            return -1
         return self.health + self.turn + self.length
 
     def update(self, data: typing.Dict):
