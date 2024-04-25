@@ -27,13 +27,15 @@ class Snake:
         self.states.append(state)
         self.rewards.append(reward)
 
-        action = self.model(env)
+        # action = self.model(env)
 
-        return action
+        print(env)
+
+        return {"move": "right"}
 
     def end(self, env: BattleSnakeEnv):
         state, reward = env.state, env.reward
-        pass
+        print(env)
 
 
 if __name__ == "__main__":
@@ -44,6 +46,6 @@ if __name__ == "__main__":
 
     run_server({"move": snake.move, "end": snake.end})
 
-    for episode in range(100):
-        # BattleSnakeEnv.reset()
-        pass
+    # for episode in range(100):
+    # BattleSnakeEnv.reset()
+    # pass

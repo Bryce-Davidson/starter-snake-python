@@ -1,5 +1,6 @@
 import numpy as np
 import typing
+import os
 
 
 class BattleSnakeEnv:
@@ -8,6 +9,13 @@ class BattleSnakeEnv:
     ENEMY_CODE = -1
     HAZARD_CODE = -2
     EMPTY_CODE = 0
+
+    @classmethod
+    def reset(cls):
+        pass
+
+    def clamp(self, x, y):
+        return min(max(x, 0), self.maxX - 1), min(max(y, 0), self.maxY - 1)
 
     def __init__(self, data: typing.Dict):
         self.data = data
@@ -27,26 +35,29 @@ class BattleSnakeEnv:
         self.state = np.zeros((self.maxY, self.maxX))
 
         for p in data["you"]["body"]:
-            self.state[p["y"]][p["x"]] = BattleSnakeEnv.YOU_CODE
+            x, y = self.clamp(p["x"], p["y"])
+            self.state[y][x] = BattleSnakeEnv.YOU_CODE
 
         for p in self.board["food"]:
+            x, y = self.clamp(p["x"], p["y"])
             self.state[p["y"]][p["x"]] = BattleSnakeEnv.FOOD_CODE
 
         for snake in self.board["snakes"]:
             for p in snake["body"]:
+                x, y = self.clamp(p["x"], p["y"])
                 self.state[p["y"]][p["x"]] = BattleSnakeEnv.ENEMY_CODE
 
         for p in self.board["hazards"]:
+            x, y = self.clamp(p["x"], p["y"])
             self.state[p["y"]][p["x"]] = BattleSnakeEnv.HAZARD_CODE
-
-    @classmethod
-    def reset(cls):
-        pass
 
     @property
     def reward(self):
         x = self.head["x"]
         y = self.head["y"]
+
+        if x < 0 or x >= self.maxX or y < 0 or y >= self.maxY:
+            return -1
 
         if self.health == 0:
             return -1
@@ -57,9 +68,6 @@ class BattleSnakeEnv:
         if self.state[y][x] == BattleSnakeEnv.HAZARD_CODE:
             return -1
 
-        if x < 0 or x >= self.maxX or y < 0 or y >= self.maxY:
-            return -1
-
         return 1
 
     def update(self, data: typing.Dict):
@@ -67,3 +75,6 @@ class BattleSnakeEnv:
 
     def step(self):
         return self.state, self.reward
+
+    def __str__(self):
+        return str(self.state)
