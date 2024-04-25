@@ -27,9 +27,9 @@ class BattleSnakeEnv:
             "--board-url",
             "http://localhost:5173/",
             "--foodSpawnChance",
-            str(0),  # convert int to str
+            "0",
             "--minimumFood",
-            str(0),  # convert int to str
+            "0",
         ]
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
