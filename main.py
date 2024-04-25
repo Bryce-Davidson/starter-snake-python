@@ -35,7 +35,7 @@ class State:
 
         return True
 
-    def get_moves(self):
+    def valid_moves(self):
 
         print(self.state[::-1])
 
@@ -64,7 +64,7 @@ def move(state: typing.Dict) -> typing.Dict:
     state = State(state)
 
     # Choose a direction to move in
-    moves = state.get_moves()
+    moves = state.valid_moves()
     if len(moves) > 0:
         return {"move": moves[np.random.randint(0, len(moves))]}
     else:
