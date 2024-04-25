@@ -37,8 +37,6 @@ class State:
 
     def valid_moves(self):
 
-        print(self.state[::-1])
-
         moves = []
         x = self.head["x"]
         y = self.head["y"]
@@ -52,19 +50,20 @@ class State:
         if self.valid_move(x, y - 1):
             moves.append("down")
 
-        print(moves)
-
         return moves
 
     def __str__(self):
-        return json.dumps(self.data)
+        return self.state[::-1]
 
 
 def move(state: typing.Dict) -> typing.Dict:
     state = State(state)
+    print(state)
 
     # Choose a direction to move in
     moves = state.valid_moves()
+    print(moves)
+
     if len(moves) > 0:
         return {"move": moves[np.random.randint(0, len(moves))]}
     else:
