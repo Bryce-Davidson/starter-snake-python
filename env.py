@@ -12,7 +12,7 @@ class BattleSnakeEnv:
     EMPTY_CODE = 0
 
     @staticmethod
-    def reset(cls, args: typing.List[str] = None):
+    def reset(args: typing.List[str] = None):
         print("Resetting server...")
         args = [
             "./battlesnake",
@@ -27,20 +27,15 @@ class BattleSnakeEnv:
             "--board-url",
             "http://localhost:5173/",
             "--foodSpawnChance",
-            0,
+            str(0),  # convert int to str
             "--minimumFood",
-            0,
+            str(0),  # convert int to str
         ]
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
 
-        output = subprocess.run(
-            args,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-        )
-
-        print(output.stdout)
+        print(stdout.decode())
+        print(stderr.decode())
 
     def clamp(self, x, y):
         return min(max(x, 0), self.maxX - 1), min(max(y, 0), self.maxY - 1)
