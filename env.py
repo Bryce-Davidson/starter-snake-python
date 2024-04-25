@@ -73,8 +73,5 @@ class BattleSnakeEnv:
     def update(self, data: typing.Dict):
         self.__init__(data)
 
-    def step(self):
-        return self.state, self.reward
-
     def __str__(self):
         return str(self.state)
