@@ -12,6 +12,12 @@ class BattleSnakeEnv:
     def __init__(self, data: typing.Dict):
         self.data = data
         self.turn = data["turn"]
+
+        self.terminated = False
+        self.truncated = False
+        self.info = None
+        self.done = False
+
         self.board = data["board"]
         self.maxY = self.board["height"]
         self.maxX = self.board["width"]
@@ -48,3 +54,6 @@ class BattleSnakeEnv:
 
     def update(self, data: typing.Dict):
         self.__init__(data)
+
+    def step(self):
+        return self.state, self.reward, self.terminated, self.info, self.done

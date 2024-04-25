@@ -1,17 +1,17 @@
-from env import BattleSnakeEnv
 import typing
+from env import BattleSnakeEnv
 
 
-class Snake:
+class PPO:
     def __init__(self):
         pass
 
     def step(self, env: BattleSnakeEnv):
-        return {"move": "up"}
+        pass
 
 
 if __name__ == "__main__":
     from server import run_server
 
-    snake = Snake()
+    snake = PPO()
     run_server({"move": snake.step})
