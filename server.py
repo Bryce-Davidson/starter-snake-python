@@ -11,12 +11,19 @@ def run_server(handlers: typing.Dict):
 
     @app.get("/")
     def on_info():
-        return handlers["info"]()
+        print("INFO")
+        return {
+            "apiversion": "1",
+            "author": "",  # TODO: Your Battlesnake Username
+            "color": "#888888",  # TODO: Choose color
+            "head": "default",  # TODO: Choose head
+            "tail": "default",  # TODO: Choose tail
+        }
 
     @app.post("/start")
     def on_start():
-        game_state = request.get_json()
-        handlers["start"](game_state)
+        # game_state = request.get_json()
+        print("GAME START")
         return "ok"
 
     @app.post("/move")
@@ -26,8 +33,7 @@ def run_server(handlers: typing.Dict):
 
     @app.post("/end")
     def on_end():
-        game_state = request.get_json()
-        handlers["end"](game_state)
+        print("GAME OVER\n")
         return "ok"
 
     @app.after_request

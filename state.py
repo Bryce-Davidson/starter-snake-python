@@ -3,6 +3,12 @@ import typing
 
 
 class State:
+    FOOD_CODE = 2
+    HAZARD_CODE = -1
+    SNAKE_CODE = -1
+    YOU_CODE = -1
+    EMPTY_CODE = 0
+
     def __init__(self, data: typing.Dict):
         self.data = data
         self.board = data["board"]
@@ -15,44 +21,14 @@ class State:
         self.state = np.zeros((self.maxY, self.maxX))
 
         for p in data["you"]["body"]:
-            self.state[p["y"]][p["x"]] = -1
+            self.state[p["y"]][p["x"]] = State.YOU_CODE
 
         for p in self.board["food"]:
-            self.state[p["y"]][p["x"]] = 2
+            self.state[p["y"]][p["x"]] = State.FOOD_CODE
 
         for snake in self.board["snakes"]:
             for p in snake["body"]:
-                self.state[p["y"]][p["x"]] = -1
+                self.state[p["y"]][p["x"]] = State.SNAKE_CODE
 
         for p in self.board["hazards"]:
-            self.state[p["y"]][p["x"]] = -1
-
-    def valid(self, x, y):
-        if x < 0 or y < 0:
-            return False
-        if x >= self.maxX or y >= self.maxY:
-            return False
-        if self.state[y][x] == -1:
-            return False
-
-        return True
-
-    def valid_moves(self):
-
-        moves = []
-        x = self.head["x"]
-        y = self.head["y"]
-
-        if self.valid(x + 1, y):
-            moves.append("right")
-        if self.valid(x - 1, y):
-            moves.append("left")
-        if self.valid(x, y + 1):
-            moves.append("up")
-        if self.valid(x, y - 1):
-            moves.append("down")
-
-        return moves
-
-    def __str__(self):
-        return str(self.state[::-1])
+            self.state[p["y"]][p["x"]] = State.HAZARD_CODE
