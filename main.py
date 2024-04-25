@@ -9,7 +9,7 @@ class Snake:
     def move(self, game_state: typing.Dict):
         state = State(game_state)
 
-        return "down"
+        return {"move": "up"}
 
 
 # Start server when `python main.py` is run
