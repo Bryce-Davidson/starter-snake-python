@@ -81,9 +81,8 @@ class Perspective:
 
 class GameParser:
 
-    def __init__(self, file_path, output_path):
+    def __init__(self, file_path):
         self.input_path = file_path
-        self.output_path = output_path
 
         self.meta = None
         self.snakeIds = None
@@ -133,21 +132,22 @@ class GameParser:
 
                 self.perspectives[snakeId].append(Perspective(snakeId, step))
 
-    def to_json(self):
-        with open(f"{self.output_path}/output.json", "w") as f:
+    def to_json(self, output_path):
+        with open(f"{output_path}/output.json", "w") as f:
             json.dump(self.steps, f)
 
 
 if __name__ == "__main__":
     file_path = "./data/out.log"
     output_path = "./data"
-    parser = GameParser(file_path, output_path).parse()
+    parser = GameParser(file_path)
 
-    parser.to_json()
+    parser.parse()
+    parser.to_json(output_path)
 
     length = len(parser.steps)
 
-    for snakeId, trajectory in parser.perspectives.values():
+    for snakeId, trajectory in parser.perspectives.items():
         for perspective in trajectory:
             print(perspective.turn)
             print(perspective)
