@@ -3,19 +3,76 @@ import numpy as np
 import json
 import os
 
+import numpy as np
+import typing
+
+
+class Perspective:
+    YOU_BODY_CODE = -1
+    YOU_HEAD_CODE = 4
+
+    ENEMY_BODY_CODE = -2
+    ENEMY_HEAD_CODE = -4
+
+    HAZARD_CODE = -3
+    FOOD_CODE = 2
+    EMPTY_CODE = 0
+
+    def clamp(self, x, y):
+        return min(max(x, 0), self.maxX - 1), min(max(y, 0), self.maxY - 1)
+
+    def __init__(self, snakeId: str, step: typing.Dict):
+        self.step = step
+        self.turn = step["turn"]
+
+        self.board = step["board"]
+        self.maxY = self.board["height"]
+        self.maxX = self.board["width"]
+
+        self.health = self.you["health"]
+        self.length = self.you["length"]
+
+        self.state = np.zeros((self.maxY, self.maxX))
+
+        codes = {
+            (True, True): Perspective.YOU_HEAD_CODE,
+            (True, False): Perspective.YOU_BODY_CODE,
+            (False, True): Perspective.ENEMY_HEAD_CODE,
+            (False, False): Perspective.ENEMY_BODY_CODE,
+        }
+
+        for snake in step["board"]["snakes"]:
+            for i, point in enumerate(snake["body"]):
+                x, y = self.clamp(point["x"], point["y"])
+                condition = (snake["id"] == snakeId, i == 0)
+                self.state[point["y"]][point["x"]] = codes[condition]
+
+        for point in step["board"]["hazards"]:
+            x, y = self.clamp(point["x"], point["y"])
+            self.state[point["y"]][point["x"]] = Perspective.HAZARD_CODE
+
+        for point in step["board"]["food"]:
+            x, y = self.clamp(point["x"], point["y"])
+            self.state[point["y"]][point["x"]] = Perspective.FOOD_CODE
+
+    @property
+    def reward(self):
+        pass
+
+    def __str__(self):
+        return str(self.state[::-1])
+
 
 class GameParser:
 
     @staticmethod
-    def perspectives(self, turns):
+    def perspectives(self, steps):
         self.perspectives = {}
 
-        for step in turns:
+        for step in steps:
             for snake in step["snakes"]:
                 if snake["id"] not in self.perspectives:
                     self.perspectives[snake["id"]] = []
-
-                self.perspectives[snake["id"]].append(snake)
 
     def __init__(self, file_path, output_path):
         self.input_path = file_path
@@ -24,19 +81,19 @@ class GameParser:
         self.meta = {}
         self.snakeIds = None
 
-        self.turns = None
+        self.steps = None
 
         self.start = None
         self.end = None
 
     def snakeIds(self):
-        for step in self.turns:
+        for step in self.steps:
             for snake in step["snakes"]:
                 if snake["id"] not in self.snakeIds:
                     self.snakeIds.append(snake["id"])
 
     def parse(self):
-        self.turns = []
+        self.steps = []
         inp = open(self.input_path, "r").readlines()
 
         for i, line in enumerate(inp):
@@ -51,17 +108,17 @@ class GameParser:
                 self.meta["winnerId"] = self.end["winnerId"]
                 self.meta["isDraw"] = self.end["isDraw"]
             else:
-                turn = obj
+                step = obj
 
-                if turn["turn"] == 0:
-                    snakes = turn["board"]["snakes"]
+                if step["turn"] == 0:
+                    snakes = step["board"]["snakes"]
                     self.snakeIds = [snake["id"] for snake in snakes]
 
-                self.turns.append(turn)
+                self.steps.append(step)
 
     def to_json(self):
         with open(f"{self.output_path}/output.json", "w") as f:
-            json.dump(self.turns, f)
+            json.dump(self.steps, f)
 
 
 if __name__ == "__main__":
