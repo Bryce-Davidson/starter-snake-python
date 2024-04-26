@@ -79,19 +79,24 @@ class Perspective:
         return 1
 
     def __str__(self):
-        return str(self.state[::-1])
+        return str(
+            {
+                "state": self.state,
+                "Rt1": self.reward,
+            }
+        )
 
 
 class GameParser:
 
     @staticmethod
     def perspectives(self, steps):
-        self.perspectives = {}
+        perspectives = {}
 
         for step in steps:
             for snake in step["snakes"]:
-                if snake["id"] not in self.perspectives:
-                    self.perspectives[snake["id"]] = []
+                if snake["id"] not in perspectives:
+                    perspectives[snake["id"]] = Perspective(snake["id"], step)
 
     def __init__(self, file_path, output_path):
         self.input_path = file_path
