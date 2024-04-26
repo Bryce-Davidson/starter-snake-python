@@ -26,13 +26,14 @@ def start_server(handlers: typing.Dict):
     def on_start():
         game_state = request.get_json()
         app.env = BattleSnakeEnv(game_state)
+        handlers["step"](app.env)
         return "ok"
 
     @app.post("/move")
     def on_move():
         game_state = request.get_json()
         app.env.update(game_state)
-        action = handlers["move"](app.env)
+        action = handlers["step"](app.env)
 
         return action
 
@@ -41,7 +42,7 @@ def start_server(handlers: typing.Dict):
         print("GAME OVER\n")
         game_state = request.get_json()
         app.env.update(game_state)
-        handlers["end"](app.env)
+        handlers["step"](app.env)
         return "ok"
 
     @app.after_request

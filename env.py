@@ -1,8 +1,5 @@
 import numpy as np
 import typing
-import os
-import subprocess
-import json
 
 
 class BattleSnakeEnv:
@@ -31,25 +28,9 @@ class BattleSnakeEnv:
         self.length = self.you["length"]
 
         self.state = np.zeros((self.maxY, self.maxX))
+        self.game = None
 
-        for p in data["you"]["body"]:
-            x, y = self.clamp(p["x"], p["y"])
-            self.state[y][x] = BattleSnakeEnv.YOU_CODE
-
-        for p in self.board["food"]:
-            x, y = self.clamp(p["x"], p["y"])
-            self.state[p["y"]][p["x"]] = BattleSnakeEnv.FOOD_CODE
-
-        for snake in self.board["snakes"]:
-            if snake["id"] == self.you["id"]:
-                continue
-            for p in snake["body"]:
-                x, y = self.clamp(p["x"], p["y"])
-                self.state[p["y"]][p["x"]] = BattleSnakeEnv.ENEMY_CODE
-
-        for p in self.board["hazards"]:
-            x, y = self.clamp(p["x"], p["y"])
-            self.state[p["y"]][p["x"]] = BattleSnakeEnv.HAZARD_CODE
+        self.update(data)
 
     @property
     def reward(self):
@@ -70,11 +51,32 @@ class BattleSnakeEnv:
 
         return 1
 
-    def observe(self):
-        return self.state, self.reward
-
     def update(self, data: typing.Dict):
-        self.__init__(data)
+        if self.game is None:
+            self.game = np.array([self.state])
+        else:
+            self.game = np.append(self.game, [self.state], axis=0)
+
+        for p in data["you"]["body"]:
+            x, y = self.clamp(p["x"], p["y"])
+            self.state[y][x] = BattleSnakeEnv.YOU_CODE
+
+        for p in data["board"]["food"]:
+            x, y = self.clamp(p["x"], p["y"])
+            self.state[p["y"]][p["x"]] = BattleSnakeEnv.FOOD_CODE
+
+        for snake in data["board"]["snakes"]:
+            if snake["id"] == self.you["id"]:
+                continue
+            for p in snake["body"]:
+                x, y = self.clamp(p["x"], p["y"])
+                self.state[p["y"]][p["x"]] = BattleSnakeEnv.ENEMY_CODE
+
+        for p in data["board"]["hazards"]:
+            x, y = self.clamp(p["x"], p["y"])
+            self.state[p["y"]][p["x"]] = BattleSnakeEnv.HAZARD_CODE
+
+        print(self.game.shape)
 
     def __str__(self):
         return str(self.state[::-1])
