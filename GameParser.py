@@ -21,11 +21,7 @@ class Perspective:
     ENEMY_BODY_CODE = 5
     ENEMY_HEAD_CODE = 6
 
-    def valid(self, x, y):
-        return x >= 0 and x < self.maxX and y >= 0 and y < self.maxY
-
     def __init__(self, snakeId: str, step: typing.Dict):
-        self.step = step
         self.turn = step["turn"]
 
         self.board = step["board"]
@@ -50,35 +46,16 @@ class Perspective:
                 self.head = snake["head"]
                 self.health = snake["health"]
                 self.length = snake["length"]
+
             for i, point in enumerate(snake["body"]):
-                if self.valid(point["x"], point["y"]):
-                    condition = (snake["id"] == snakeId, i == 0)
-                    self.state[point["y"]][point["x"]] = codes[condition]
+                condition = (snake["id"] == snakeId, i == 0)
+                self.state[point["y"]][point["x"]] = codes[condition]
 
         for point in step["board"]["hazards"]:
             self.state[point["y"]][point["x"]] = Perspective.HAZARD_CODE
 
         for point in step["board"]["food"]:
             self.state[point["y"]][point["x"]] = Perspective.FOOD_CODE
-
-    @property
-    def reward(self):
-        x = self.head["x"]
-        y = self.head["y"]
-
-        conditions = [
-            x < 0 or x >= self.maxX or y < 0 or y >= self.maxY,
-            self.health == 0,
-            self.state[y][x] == Perspective.YOU_BODY_CODE,
-            self.state[y][x] == Perspective.ENEMY_BODY_CODE,
-            self.state[y][x] == Perspective.ENEMY_HEAD_CODE,
-            self.state[y][x] == Perspective.HAZARD_CODE,
-        ]
-
-        if any(conditions):
-            return -1
-
-        return 1
 
     def __str__(self):
         string = ""
@@ -98,7 +75,7 @@ class GameParser:
     def perspectives(steps):
         perspectives = {}
 
-        for step in steps:
+        for i, step in enumerate(steps):
             for snake in step["board"]["snakes"]:
                 snakeId = snake["id"]
 
@@ -129,8 +106,8 @@ class GameParser:
 
     def parse(self):
         self.steps = []
-        inp = open(self.input_path, "r").readlines()
 
+        inp = open(self.input_path, "r").readlines()
         for i, line in enumerate(inp):
             obj = json.loads(line)
 
@@ -144,7 +121,6 @@ class GameParser:
                 self.meta["isDraw"] = self.end["isDraw"]
             else:
                 step = obj
-
                 if step["turn"] == 0:
                     snakes = step["board"]["snakes"]
                     self.snakeIds = [snake["id"] for snake in snakes]
@@ -164,9 +140,13 @@ if __name__ == "__main__":
     parser.parse()
     parser.to_json()
 
+    # print(json.dumps(parser.steps[-1], indent=4))
+
     perspectives = parser.perspectives(parser.steps)
 
-    for p in perspectives:
-        print(perspectives[p][0])
-        print(perspectives[p][0].reward)
-        print()
+    # for snake, trajectory in perspectives.items():
+    #     print(f"Snake: {snake}")
+    #     for perspective in trajectory:
+    #         print(perspective.turn)
+    #         print(perspective)
+    #         print()
