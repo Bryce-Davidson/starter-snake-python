@@ -145,6 +145,8 @@ if __name__ == "__main__":
 
     parser.to_json()
 
+    length = len(parser.steps)
+
     for snakeId, trajectory in parser.perspectives.values():
         for perspective in trajectory:
             print(perspective.turn)
