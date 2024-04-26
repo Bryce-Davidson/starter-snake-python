@@ -7,6 +7,11 @@ import numpy as np
 import typing
 
 
+class Trajectory:
+    def __init__(self):
+        pass
+
+
 class Perspective:
     EMPTY_CODE = 0
     FOOD_CODE = 1
@@ -27,6 +32,7 @@ class Perspective:
         self.maxY = self.board["height"]
         self.maxX = self.board["width"]
 
+        self.head = None
         self.health = self.you["health"]
         self.length = self.you["length"]
 
@@ -40,6 +46,8 @@ class Perspective:
         }
 
         for snake in step["board"]["snakes"]:
+            if snake["id"] == snakeId:
+                self.head = snake["head"]
             for i, point in enumerate(snake["body"]):
                 if self.valid(point["x"], point["y"]):
                     condition = (snake["id"] == snakeId, i == 0)
