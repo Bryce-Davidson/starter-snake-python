@@ -3,10 +3,12 @@ import typing
 
 
 class BattleSnakeEnv:
-    YOU_CODE = -1
-    FOOD_CODE = 2
-    ENEMY_CODE = -2
+    YOU_BODY_CODE = -1
+    YOU_HEAD_CODE = 4
+    ENEMY_BODY_CODE = -2
+    ENEMY_HEAD_CODE = -4
     HAZARD_CODE = -3
+    FOOD_CODE = 2
     EMPTY_CODE = 0
 
     def clamp(self, x, y):
@@ -43,7 +45,7 @@ class BattleSnakeEnv:
         if self.health == 0:
             return -1
 
-        if self.state[y][x] == BattleSnakeEnv.ENEMY_CODE:
+        if self.state[y][x] == BattleSnakeEnv.ENEMY_BODY_CODE:
             return -1
 
         if self.state[y][x] == BattleSnakeEnv.HAZARD_CODE:
@@ -59,7 +61,7 @@ class BattleSnakeEnv:
 
         for p in data["you"]["body"]:
             x, y = self.clamp(p["x"], p["y"])
-            self.state[y][x] = BattleSnakeEnv.YOU_CODE
+            self.state[y][x] = BattleSnakeEnv.YOU_BODY_CODE
 
         for p in data["board"]["food"]:
             x, y = self.clamp(p["x"], p["y"])
@@ -70,7 +72,7 @@ class BattleSnakeEnv:
                 continue
             for p in snake["body"]:
                 x, y = self.clamp(p["x"], p["y"])
-                self.state[p["y"]][p["x"]] = BattleSnakeEnv.ENEMY_CODE
+                self.state[p["y"]][p["x"]] = BattleSnakeEnv.ENEMY_BODY_CODE
 
         for p in data["board"]["hazards"]:
             x, y = self.clamp(p["x"], p["y"])

@@ -5,26 +5,38 @@ import os
 
 
 class GameParser:
-    def __init__(self, input_path, output_path):
-        self.input_path = input_path
+
+    @staticmethod
+    def perspectives(self, turns):
+        self.perspectives = {}
+
+        for step in turns:
+            for snake in step["snakes"]:
+                if snake["id"] not in self.perspectives:
+                    self.perspectives[snake["id"]] = []
+
+                self.perspectives[snake["id"]].append(snake)
+
+    def __init__(self, file_path, output_path):
+        self.input_path = file_path
         self.output_path = output_path
 
         self.meta = {}
-        self.snakeIds = []
+        self.snakeIds = None
 
-        self.steps = None
+        self.turns = None
 
         self.start = None
         self.end = None
 
     def snakeIds(self):
-        for step in self.steps:
+        for step in self.turns:
             for snake in step["snakes"]:
                 if snake["id"] not in self.snakeIds:
                     self.snakeIds.append(snake["id"])
 
     def parse(self):
-        self.steps = []
+        self.turns = []
         inp = open(self.input_path, "r").readlines()
 
         for i, line in enumerate(inp):
@@ -39,23 +51,23 @@ class GameParser:
                 self.meta["winnerId"] = self.end["winnerId"]
                 self.meta["isDraw"] = self.end["isDraw"]
             else:
-                step = obj
+                turn = obj
 
-                if step["turn"] == 0:
-                    snakes = step["board"]["snakes"]
+                if turn["turn"] == 0:
+                    snakes = turn["board"]["snakes"]
                     self.snakeIds = [snake["id"] for snake in snakes]
 
-                self.steps.append(step)
+                self.turns.append(turn)
 
     def to_json(self):
         with open(f"{self.output_path}/output.json", "w") as f:
-            json.dump(self.steps, f)
+            json.dump(self.turns, f)
 
 
 if __name__ == "__main__":
-    input_path = "./data/out.log"
+    file_path = "./data/out.log"
     output_path = "./data"
-    parser = GameParser(input_path, output_path)
+    parser = GameParser(file_path, output_path)
 
     parser.parse()
     parser.to_json()
