@@ -9,37 +9,52 @@ class GameParser:
         self.input_path = input_path
         self.output_path = output_path
 
-        self.input = None
-        self.output = None
+        self.meta = {}
+        self.snakeIds = []
+
+        self.steps = None
 
         self.start = None
         self.end = None
 
-    def read(self):
-        with open(self.input_path, "r") as f:
-            self.input = f.readlines()
+    def snakeIds(self):
+        for step in self.steps:
+            for snake in step["snakes"]:
+                if snake["id"] not in self.snakeIds:
+                    self.snakeIds.append(snake["id"])
 
     def parse(self):
-        self.output = []
-        for i, line in enumerate(self.input):
+        self.steps = []
+        inp = open(self.input_path, "r").readlines()
+
+        for i, line in enumerate(inp):
             obj = json.loads(line)
+
             if i == 0:
                 self.start = obj
-            elif i == len(self.input) - 1:
+                self.meta["id"] = self.start["id"]
+                self.meta["map"] = self.start["map"]
+            elif i == len(inp) - 1:
                 self.end = obj
+                self.meta["winnerId"] = self.end["winnerId"]
+                self.meta["isDraw"] = self.end["isDraw"]
             else:
-                self.output.append(obj)
+                step = obj
+
+                if step["turn"] == 0:
+                    snakes = step["board"]["snakes"]
+                    self.snakeIds = [snake["id"] for snake in snakes]
+
+                self.steps.append(step)
 
     def to_json(self):
         with open(f"{self.output_path}/output.json", "w") as f:
-            json.dump(self.output, f)
+            json.dump(self.steps, f)
 
-    def normalize(self):
-        self.output = pd.json_normalize(self.output)
-
-    def write(self):
-        self.normalize()
-        self.output.to_csv(f"{self.output_path}/output.csv", index=False)
+    def to_csv(self):
+        pd.json_normalize(self.steps).to_csv(
+            f"{self.output_path}/output.csv", index=False
+        )
 
 
 if __name__ == "__main__":
@@ -47,10 +62,13 @@ if __name__ == "__main__":
     output_path = "./data"
     parser = GameParser(input_path, output_path)
 
-    parser.read()
     parser.parse()
     parser.to_json()
-    parser.write()
+    parser.to_csv()
+
+    print(json.dumps(parser.start, indent=4))
+    print(parser.snakeIds)
 
     # df = pd.read_csv(f"{output_path}/output.csv")
-    # print(df.columns)
+    # # print 10 first rows
+    # print(df.head(10))
