@@ -51,11 +51,6 @@ class GameParser:
         with open(f"{self.output_path}/output.json", "w") as f:
             json.dump(self.steps, f)
 
-    def to_csv(self):
-        pd.json_normalize(self.steps).to_csv(
-            f"{self.output_path}/output.csv", index=False
-        )
-
 
 if __name__ == "__main__":
     input_path = "./data/out.log"
@@ -64,11 +59,3 @@ if __name__ == "__main__":
 
     parser.parse()
     parser.to_json()
-    parser.to_csv()
-
-    print(json.dumps(parser.start, indent=4))
-    print(parser.snakeIds)
-
-    # df = pd.read_csv(f"{output_path}/output.csv")
-    # # print 10 first rows
-    # print(df.head(10))
