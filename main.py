@@ -21,21 +21,21 @@ class Snake:
         self.rewards = []
         self.old_log_probs = []
 
-    def move(self, env: BattleSnakeEnv):
-        state, reward = env.state, env.reward
-
-        print(env)
-
+    def store(self, state, reward):
         self.states.append(state)
         self.rewards.append(reward)
 
-        # action = self.model(env)
+    def start(self, env: BattleSnakeEnv):
+        self.store(env.observe())
+
+    def move(self, env: BattleSnakeEnv):
+        state, reward = env.observe()
+        self.store(state, reward)
 
         return {"move": "right"}
 
     def end(self, env: BattleSnakeEnv):
-        state, reward = env.state, env.reward
-        time.sleep(1)
+        self.store(env.observe())
 
 
 if __name__ == "__main__":

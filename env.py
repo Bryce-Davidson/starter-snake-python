@@ -1,5 +1,7 @@
 import numpy as np
 import typing
+import os
+import subprocess
 import json
 
 
@@ -67,6 +69,9 @@ class BattleSnakeEnv:
             return -1
 
         return 1
+
+    def observe(self):
+        return self.state, self.reward
 
     def update(self, data: typing.Dict):
         self.__init__(data)
