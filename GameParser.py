@@ -33,8 +33,8 @@ class Perspective:
         self.maxX = self.board["width"]
 
         self.head = None
-        self.health = self.you["health"]
-        self.length = self.you["length"]
+        self.health = None
+        self.length = None
 
         self.state = np.zeros((self.maxY, self.maxX))
 
@@ -48,6 +48,8 @@ class Perspective:
         for snake in step["board"]["snakes"]:
             if snake["id"] == snakeId:
                 self.head = snake["head"]
+                self.health = snake["health"]
+                self.length = snake["length"]
             for i, point in enumerate(snake["body"]):
                 if self.valid(point["x"], point["y"]):
                     condition = (snake["id"] == snakeId, i == 0)
@@ -79,24 +81,33 @@ class Perspective:
         return 1
 
     def __str__(self):
-        return str(
-            {
-                "state": self.state,
-                "Rt1": self.reward,
-            }
-        )
+        string = ""
+        for row in self.state:
+            for cell in row:
+                string += str(int(cell)) + " "
+            string += "\n"
+        return string
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class GameParser:
 
     @staticmethod
-    def perspectives(self, steps):
+    def perspectives(steps):
         perspectives = {}
 
         for step in steps:
-            for snake in step["snakes"]:
-                if snake["id"] not in perspectives:
-                    perspectives[snake["id"]] = Perspective(snake["id"], step)
+            for snake in step["board"]["snakes"]:
+                snakeId = snake["id"]
+
+                if snakeId not in perspectives:
+                    perspectives[snakeId] = []
+
+                perspectives[snakeId].append(Perspective(snakeId, step))
+
+        return perspectives
 
     def __init__(self, file_path, output_path):
         self.input_path = file_path
@@ -152,3 +163,10 @@ if __name__ == "__main__":
 
     parser.parse()
     parser.to_json()
+
+    perspectives = parser.perspectives(parser.steps)
+
+    for p in perspectives:
+        print(perspectives[p][0])
+        print(perspectives[p][0].reward)
+        print()
