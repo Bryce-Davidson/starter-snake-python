@@ -153,3 +153,5 @@ if __name__ == "__main__":
             trajectory.append((s.state, action, 1))
 
         trajectory.append((states[-1].state, 0, 1))
+
+        print()
