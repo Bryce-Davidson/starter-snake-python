@@ -9,7 +9,7 @@ class Snake:
     def step(self, env: BattleSnakeEnv):
         state, reward = env.state, env.reward
 
-        return {"move": "right"}
+        return {"move": "up"}
 
 
 if __name__ == "__main__":

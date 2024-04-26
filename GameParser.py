@@ -43,7 +43,7 @@ class Perspective:
 
         for snake in step["board"]["snakes"]:
             if snake["id"] == snakeId:
-                self.head = np.array([snake["head"]["y"], snake["head"]["x"]])
+                self.head = np.array([snake["head"]["x"], snake["head"]["y"]])
                 self.health = snake["health"]
                 self.length = snake["length"]
 
@@ -70,13 +70,15 @@ class Perspective:
 
     def __sub__(self, prev):
         actions = [
-            np.array([0, 1]),  # right
-            np.array([0, -1]),  # left
-            np.array([1, 0]),  # down
-            np.array([-1, 0]),  # up
+            (1, 0),  # up
+            (0, 1),  # right
+            (-1, 0),  # down
+            (0, -1),  # left
         ]
 
-        return actions.index(self.head - prev.head)
+        action = self.head - prev.head
+
+        return actions.index(tuple(action))
 
 
 class GameParser:
@@ -145,9 +147,9 @@ if __name__ == "__main__":
     parser.parse()
     parser.to_json(output_path)
 
-    length = len(parser.steps)
+    length = len(parser.steps) - 1
+    print(length)
 
     for snakeId, trajectory in parser.perspectives.items():
-        for perspective in trajectory:
-            print(perspective.turn)
-            print(perspective)
+        for i, (t, t1) in enumerate(zip(trajectory, trajectory[1:])):
+            print(t1 - t)
