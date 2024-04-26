@@ -8,18 +8,16 @@ import typing
 
 
 class Perspective:
-    YOU_BODY_CODE = -1
-    YOU_HEAD_CODE = 4
-
-    ENEMY_BODY_CODE = -2
-    ENEMY_HEAD_CODE = -4
-
-    HAZARD_CODE = -3
-    FOOD_CODE = 2
     EMPTY_CODE = 0
+    FOOD_CODE = 1
+    HAZARD_CODE = 2
+    YOU_BODY_CODE = 3
+    YOU_HEAD_CODE = 4
+    ENEMY_BODY_CODE = 5
+    ENEMY_HEAD_CODE = 6
 
-    def clamp(self, x, y):
-        return min(max(x, 0), self.maxX - 1), min(max(y, 0), self.maxY - 1)
+    def valid(self, x, y):
+        return x >= 0 and x < self.maxX and y >= 0 and y < self.maxY
 
     def __init__(self, snakeId: str, step: typing.Dict):
         self.step = step
@@ -43,16 +41,14 @@ class Perspective:
 
         for snake in step["board"]["snakes"]:
             for i, point in enumerate(snake["body"]):
-                x, y = self.clamp(point["x"], point["y"])
-                condition = (snake["id"] == snakeId, i == 0)
-                self.state[point["y"]][point["x"]] = codes[condition]
+                if self.valid(point["x"], point["y"]):
+                    condition = (snake["id"] == snakeId, i == 0)
+                    self.state[point["y"]][point["x"]] = codes[condition]
 
         for point in step["board"]["hazards"]:
-            x, y = self.clamp(point["x"], point["y"])
             self.state[point["y"]][point["x"]] = Perspective.HAZARD_CODE
 
         for point in step["board"]["food"]:
-            x, y = self.clamp(point["x"], point["y"])
             self.state[point["y"]][point["x"]] = Perspective.FOOD_CODE
 
     @property
