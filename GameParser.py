@@ -81,35 +81,24 @@ class Perspective:
 
 class GameParser:
 
-    @staticmethod
-    def perspectives(steps: typing.List[typing.Dict]):
-        perspectives = {}
-
-        for i, step in enumerate(steps):
-            for snake in step["board"]["snakes"]:
-                snakeId = snake["id"]
-
-                if snakeId not in perspectives:
-                    perspectives[snakeId] = []
-
-                perspectives[snakeId].append(Perspective(snakeId, step))
-
-        return perspectives
-
     def __init__(self, file_path, output_path):
         self.input_path = file_path
         self.output_path = output_path
 
-        self.meta = {}
+        self.meta = None
         self.snakeIds = None
 
         self.steps = None
+        self.perspectives = None
 
         self.start = None
         self.end = None
 
     def parse(self):
+        self.meta = {}
         self.steps = []
+
+        # --- Parse steps ---
 
         inp = open(self.input_path, "r").readlines()
         for i, line in enumerate(inp):
@@ -131,6 +120,19 @@ class GameParser:
 
                 self.steps.append(step)
 
+        # --- Create perspectives ---
+
+        self.perspectives = {}
+
+        for i, step in enumerate(self.steps):
+            for snake in step["board"]["snakes"]:
+                snakeId = snake["id"]
+
+                if snakeId not in self.perspectives:
+                    self.perspectives[snakeId] = []
+
+                self.perspectives[snakeId].append(Perspective(snakeId, step))
+
     def to_json(self):
         with open(f"{self.output_path}/output.json", "w") as f:
             json.dump(self.steps, f)
@@ -139,15 +141,11 @@ class GameParser:
 if __name__ == "__main__":
     file_path = "./data/out.log"
     output_path = "./data"
-    parser = GameParser(file_path, output_path)
+    parser = GameParser(file_path, output_path).parse()
 
-    parser.parse()
     parser.to_json()
 
-    perspectives = parser.perspectives(parser.steps)
-
-    for snake, trajectory in perspectives.items():
-        print(f"Snake: {snake}")
+    for snakeId, trajectory in parser.perspectives.values():
         for perspective in trajectory:
             print(perspective.turn)
             print(perspective)
