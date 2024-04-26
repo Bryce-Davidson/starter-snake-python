@@ -7,11 +7,6 @@ import numpy as np
 import typing
 
 
-class Trajectory:
-    def __init__(self):
-        pass
-
-
 class Perspective:
     EMPTY_CODE = 0
     FOOD_CODE = 1
@@ -150,6 +145,11 @@ if __name__ == "__main__":
     length = len(parser.steps) - 1
     print(length)
 
-    for snakeId, trajectory in parser.perspectives.items():
-        for i, (t, t1) in enumerate(zip(trajectory, trajectory[1:])):
-            print(t1 - t)
+    for snakeId, states in parser.perspectives.items():
+        trajectory = []
+        for i, (s, s1) in enumerate(zip(states, states[1:])):
+            print(s.turn, s1.turn)
+            action = s1 - s
+            trajectory.append((s.state, action, 1))
+
+        trajectory.append((states[-1].state, 0, 1))
