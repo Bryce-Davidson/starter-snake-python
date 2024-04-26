@@ -53,7 +53,22 @@ class Perspective:
 
     @property
     def reward(self):
-        pass
+        x = self.head["x"]
+        y = self.head["y"]
+
+        conditions = [
+            x < 0 or x >= self.maxX or y < 0 or y >= self.maxY,
+            self.health == 0,
+            self.state[y][x] == Perspective.YOU_BODY_CODE,
+            self.state[y][x] == Perspective.ENEMY_BODY_CODE,
+            self.state[y][x] == Perspective.ENEMY_HEAD_CODE,
+            self.state[y][x] == Perspective.HAZARD_CODE,
+        ]
+
+        if any(conditions):
+            return -1
+
+        return 1
 
     def __str__(self):
         return str(self.state[::-1])
