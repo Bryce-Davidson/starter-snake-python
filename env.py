@@ -78,7 +78,5 @@ class BattleSnakeEnv:
             x, y = self.clamp(p["x"], p["y"])
             self.state[p["y"]][p["x"]] = BattleSnakeEnv.HAZARD_CODE
 
-        print(self.game.shape)
-
     def __str__(self):
         return str(self.state[::-1])

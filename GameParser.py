@@ -142,16 +142,15 @@ if __name__ == "__main__":
     parser.parse()
     parser.to_json(output_path)
 
+    print(json.dumps(parser.start, indent=4))
+
     length = len(parser.steps) - 1
     print(length)
 
     for snakeId, states in parser.perspectives.items():
         trajectory = []
         for i, (s, s1) in enumerate(zip(states, states[1:])):
-            print(s.turn, s1.turn)
             action = s1 - s
             trajectory.append((s.state, action, 1))
 
         trajectory.append((states[-1].state, 0, 1))
-
-        print()

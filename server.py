@@ -1,6 +1,8 @@
 import os
 import logging
 import typing
+import json
+
 
 from env import BattleSnakeEnv
 from flask import Flask
@@ -24,22 +26,25 @@ def start_server(handlers: typing.Dict):
 
     @app.post("/start")
     def on_start():
+        print("START")
         game_state = request.get_json()
+        print(f"turn: {game_state["turn"]}")
+        # print(json.dumps(game_state, indent=2))
         app.env = BattleSnakeEnv(game_state)
-        handlers["step"](app.env)
         return "ok"
 
     @app.post("/move")
     def on_move():
+        print("MOVE")
         game_state = request.get_json()
+        print(f"turn: {game_state["turn"]}")
+        # print(json.dumps(game_state["board"]["snakes"], indent=2))
         app.env.update(game_state)
-        action = handlers["step"](app.env)
-
-        return action
+        return {"move": "down"}
 
     @app.post("/end")
     def on_end():
-        print("GAME OVER\n")
+        print("END\n")
         game_state = request.get_json()
         app.env.update(game_state)
         handlers["step"](app.env)
