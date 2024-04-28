@@ -51,10 +51,12 @@ memory = []
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
 epsilon = 1.0
-decay = 0.99
+decay = 0.999
 gamma = 0.9
-episodes = 100
-max_steps = 200
+episodes = 1000
+max_steps = 300
+mem_size = 300
+sample_size = 100
 
 for i in range(episodes):
     state, info = env.reset(options={"randomize": False})
@@ -80,7 +82,7 @@ for i in range(episodes):
 
     print(f"Episode: {i}, Reward: {R}, Epsilon: {epsilon}")
 
-    if len(memory) > 200:
+    if len(memory) > mem_size:
         batch = random.sample(memory, 100)
         for state, action, reward, next_state, terminated in batch:
             next_state = torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
@@ -94,6 +96,9 @@ for i in range(episodes):
             loss.backward()
             optimizer.step()
 
+    if i % 100 == 0:
+        torch.save(model.state_dict(), "model.pth")
+
 # -------------------------------------------------
 
 env = gym.make(
@@ -104,6 +109,7 @@ for i in range(episodes):
     state, info = env.reset(options={"randomize": False})
 
     terminated, truncated = False, False
+
     while not terminated and not truncated:
         state = torch.tensor(state).permute(2, 0, 1).unsqueeze(0).float()
         action = model.act(state, 0)
