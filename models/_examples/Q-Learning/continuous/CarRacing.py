@@ -36,11 +36,10 @@ class DQN(nn.Module):
         return x
 
     def act(self, state, epsilon):
-        return (
-            np.random.randint(0, self.action_shape)
-            if np.random.rand() < epsilon
-            else self.forward(state).max(1)[1].view(1, 1).item()
-        )
+        if np.random.rand() < epsilon:
+            return np.random.randint(0, self.action_shape)
+        else:
+            return self.forward(state).max(1)[1].item()
 
 
 # -------------------------------------------------
@@ -52,10 +51,10 @@ memory = []
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
 epsilon = 1.0
-decay = 0.9999
+decay = 0.99
 gamma = 0.9
-episodes = 10
-max_steps = 100
+episodes = 100
+max_steps = 200
 
 for i in range(episodes):
     state, info = env.reset(options={"randomize": False})
@@ -81,16 +80,15 @@ for i in range(episodes):
 
     print(f"Episode: {i}, Reward: {R}, Epsilon: {epsilon}")
 
-    if len(memory) > 1000:
+    if len(memory) > 200:
         batch = random.sample(memory, 100)
         for state, action, reward, next_state, terminated in batch:
-            state = torch.tensor(state).permute(2, 0, 1).unsqueeze(0).float()
             next_state = torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
 
-            Qt = model(state).max(1)
-            Qt1 = model(next_state).max(1)
+            Qt = model(state)[0][action]
+            Qt1 = model(next_state).max(1)[0].detach()
 
-            loss = torch.pow(reward + gamma * Qt - Qt1, 2)
+            loss = torch.pow((reward + gamma * Qt1) - Qt, 2)
 
             optimizer.zero_grad()
             loss.backward()
