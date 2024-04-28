@@ -1,4 +1,5 @@
 from models.PPO import PPO
+from models.ActorCritic import ActorNetwork
 from env import BattleSnakeEnv
 
 

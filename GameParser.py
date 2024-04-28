@@ -24,6 +24,7 @@ class Perspective:
         self.maxX = self.board["width"]
 
         self.head = None
+        self.move = None
         self.health = None
         self.length = None
 
@@ -41,9 +42,11 @@ class Perspective:
                 self.head = np.array([snake["head"]["x"], snake["head"]["y"]])
                 self.health = snake["health"]
                 self.length = snake["length"]
+                self.move = snake["move"]
 
             for i, point in enumerate(snake["body"]):
-                condition = (snake["id"] == snakeId, i == 0)
+                IS_HEAD = i == 0
+                condition = (snake["id"] == snakeId, IS_HEAD)
                 self.state[point["y"]][point["x"]] = codes[condition]
 
         for point in step["board"]["hazards"]:
@@ -52,82 +55,61 @@ class Perspective:
         for point in step["board"]["food"]:
             self.state[point["y"]][point["x"]] = Perspective.FOOD_CODE
 
+    @property
+    def action(self):
+        actions = {"up": 0, "right": 1, "down": 2, "left": 3}
+        return actions[self.move]
+
     def __str__(self):
         string = ""
-        for row in self.state:
+        for row in self.state[::-1]:
             for cell in row:
                 string += str(int(cell)) + " "
             string += "\n"
+
         return string
 
     def __repr__(self):
         return self.__str__()
 
-    def __sub__(self, prev):
-        actions = [
-            (1, 0),  # up
-            (0, 1),  # right
-            (-1, 0),  # down
-            (0, -1),  # left
-        ]
 
-        action = self.head - prev.head
-
-        return actions.index(tuple(action))
-
-
-class GameParser:
-
+class Game:
     def __init__(self, file_path):
         self.input_path = file_path
 
-        self.meta = None
+        self.meta = {}
+        self.steps = []
         self.snakeIds = None
-
-        self.steps = None
-        self.perspectives = None
+        self.perspectives = {}
 
         self.start = None
         self.end = None
 
-    def parse(self):
-        self.meta = {}
-        self.steps = []
-
         # --- Parse steps ---
+        with open(self.input_path, "r") as log_file:
+            log = [json.loads(line) for line in log_file]
 
-        inp = open(self.input_path, "r").readlines()
-        for i, line in enumerate(inp):
-            obj = json.loads(line)
+        self.start = log[0]
+        self.meta = {"id": self.start["id"], "map": self.start["map"]}
 
-            if i == 0:
-                self.start = obj
-                self.meta["id"] = self.start["id"]
-                self.meta["map"] = self.start["map"]
-            elif i == len(inp) - 1:
-                self.end = obj
-                self.meta["winnerId"] = self.end["winnerId"]
-                self.meta["isDraw"] = self.end["isDraw"]
-            else:
-                step = obj
-                if step["turn"] == 0:
-                    snakes = step["board"]["snakes"]
-                    self.snakeIds = [snake["id"] for snake in snakes]
+        self.end = log[-1]
+        self.meta.update(
+            {"winnerId": self.end["winnerId"], "isDraw": self.end["isDraw"]}
+        )
 
-                self.steps.append(step)
+        self.steps = log[1:-1]
+        self.snakeIds = [snake["id"] for snake in self.steps[0]["board"]["snakes"]]
 
         # --- Create perspectives ---
-
-        self.perspectives = {}
-
-        for i, step in enumerate(self.steps):
+        for step in self.steps:
             for snake in step["board"]["snakes"]:
                 snakeId = snake["id"]
-
                 if snakeId not in self.perspectives:
                     self.perspectives[snakeId] = []
-
                 self.perspectives[snakeId].append(Perspective(snakeId, step))
+
+    def __len__(self):
+        return len(self.steps)
 
     def to_json(self, output_path):
         with open(f"{output_path}/output.json", "w") as f:
@@ -137,20 +119,20 @@ class GameParser:
 if __name__ == "__main__":
     file_path = "./data/out.log"
     output_path = "./data"
-    parser = GameParser(file_path)
 
-    parser.parse()
-    parser.to_json(output_path)
+    game = Game(file_path)
+    game.to_json(output_path)
 
-    print(json.dumps(parser.start, indent=4))
+    print(f"game length: {len(game)}")
 
-    length = len(parser.steps) - 1
-    print(length)
-
-    for snakeId, states in parser.perspectives.items():
+    for snakeId, persepctives in game.perspectives.items():
         trajectory = []
-        for i, (s, s1) in enumerate(zip(states, states[1:])):
-            action = s1 - s
-            trajectory.append((s.state, action, 1))
+        for i, perspective in enumerate(persepctives):
 
-        trajectory.append((states[-1].state, 0, 1))
+            reward = 0
+            trajectory.append((perspective.state, perspective.action))
+
+            print(f"snakeId: {snakeId}, turn: {i}")
+            print(perspective)
+            print(perspective.action)
+            print(reward)
