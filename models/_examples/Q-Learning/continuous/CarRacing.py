@@ -52,9 +52,9 @@ memory = []
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
 epsilon = 1.0
-decay = 0.99
+decay = 0.9999
 gamma = 0.9
-episodes = 100
+episodes = 10
 max_steps = 100
 
 for i in range(episodes):
@@ -79,7 +79,7 @@ for i in range(episodes):
 
     epsilon *= decay
 
-    print(f"Episode: {i}, Reward: {R}")
+    print(f"Episode: {i}, Reward: {R}, Epsilon: {epsilon}")
 
     if len(memory) > 1000:
         batch = random.sample(memory, 100)
@@ -87,10 +87,10 @@ for i in range(episodes):
             state = torch.tensor(state).permute(2, 0, 1).unsqueeze(0).float()
             next_state = torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
 
-            Qt = model(state)
-            Qt1 = model(next_state)
+            Qt = model(state).max(1)
+            Qt1 = model(next_state).max(1)
 
-            loss = torch.pow(reward + gamma * torch.max(Qt1) - torch.max(Qt), 2)
+            loss = torch.pow(reward + gamma * Qt - Qt1, 2)
 
             optimizer.zero_grad()
             loss.backward()
@@ -106,7 +106,7 @@ for i in range(episodes):
     state, info = env.reset(options={"randomize": False})
 
     terminated, truncated = False, False
-    while not terminated and not truncated and steps < max_steps:
+    while not terminated and not truncated:
         state = torch.tensor(state).permute(2, 0, 1).unsqueeze(0).float()
         action = model.act(state, 0)
         state, reward, terminated, truncated, info = env.step(action)
