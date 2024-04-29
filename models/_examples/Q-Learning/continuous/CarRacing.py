@@ -5,6 +5,38 @@ import torch.optim as optim
 import random
 import numpy as np
 
+# 0: do nothing
+# 1: steer left
+# 2: steer right
+# 3: gas
+# 4: brake
+
+actions = {
+    0: "do nothing",
+    1: "steer left",
+    2: "steer right",
+    3: "gas",
+    4: "brake",
+}
+
+
+class ReplayBuffer:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.memory = []
+
+    def push(self, state, action, reward, next_state, terminated):
+        if len(self.memory) > self.capacity:
+            self.memory.pop(0)
+
+        self.memory.append((state, action, reward, next_state, terminated))
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
+
+    def __len__(self):
+        return len(self.memory)
+
 
 class DQN(nn.Module):
     def __init__(self, action_shape):
@@ -36,29 +68,36 @@ class DQN(nn.Module):
 
     def act(self, state, epsilon):
         if np.random.rand() < epsilon:
-            return np.random.randint(0, self.action_shape)
+            action = np.random.randint(0, self.action_shape)
+            # print(f"Random Action: {actions[action]}, Epsilon: {epsilon}")
         else:
-            action = self.forward(state).max(1)[1].item()
-            return action
+            action = torch.argmax(self.forward(state)).item()
+            # print(f"Model Action: {actions[action]}, {epsilon}")
+
+        return action
 
 
 # # -------------------------------------------------
 
-env = gym.make("CarRacing-v2", continuous=False, domain_randomize=True)
-model = DQN(env.action_space.n)
-memory = []
-
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+env = gym.make(
+    "CarRacing-v2",
+    continuous=False,
+    render_mode="human",
+)
 
 episodes = 100
-max_steps = 100
-mem_size = 1000
-sample_size = 100
+max_steps = 500
+mem_capacity = 2000
+sample_size = 200
 
 epsilon = 1.0
-decay = 0.999
+decay = 0.95
 gamma = 0.9
 
+model = DQN(env.action_space.n)
+memory = ReplayBuffer(capacity=mem_capacity)
+
+optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
 for i in range(episodes):
     state, info = env.reset(options={"randomize": False})
@@ -73,9 +112,7 @@ for i in range(episodes):
 
         next_state, reward, terminated, truncated, info = env.step(action)
 
-        if len(memory) > mem_size:
-            memory.pop(0)
-        memory.append((state, action, reward, next_state, terminated))
+        memory.push(state, action, reward, next_state, terminated)
 
         R += reward
         state = next_state
@@ -84,32 +121,32 @@ for i in range(episodes):
 
     epsilon *= decay
 
-    print(f"Episode: {i}, Reward: {R}, Epsilon: {epsilon}")
+    print(f"Episode: {i}, Reward: {R}, Epsilon: {epsilon}, Memory: {len(memory)}")
 
-    if len(memory) > mem_size:
-        batch = random.sample(memory, sample_size)
-        for state, action, reward, next_state, terminated in batch:
-            next_state = torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
+    if len(memory) > mem_capacity:
+        for _ in range(5):
+            batch = memory.sample(sample_size)
+            for state, action, reward, next_state, terminated in batch:
+                next_state = (
+                    torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
+                )
 
-            Qt = model(state)[0][action]
-            Qt1 = model(next_state).max(1)[0].detach()
+                Qt = model(state).squeeze(0)[action]
+                Qt1 = torch.argmax(model(next_state))
 
-            target = reward + (1 - terminated) * gamma * Qt1
+                target = reward + (1 - terminated) * gamma * Qt1
+                loss = torch.pow(target - Qt, 2)
 
-            loss = torch.pow(target - Qt, 2)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
     if i % 10 == 0:
         torch.save(model.state_dict(), "model.pth")
 
 # -------------------------------------------------
 
-env = gym.make(
-    "CarRacing-v2", continuous=False, domain_randomize=True, render_mode="human"
-)
+env = gym.make("CarRacing-v2", continuous=False, render_mode="human")
 
 model.load_state_dict(torch.load("model.pth"))
 
