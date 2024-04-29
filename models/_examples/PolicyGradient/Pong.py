@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import torch.nn as nn
@@ -33,16 +34,14 @@ class Policy(nn.Module):
         )
 
     def forward(self, x):
-        x = x.permute(2, 0, 1).unsqueeze(
-            0
-        )  # Rearrange dimensions to (C, H, W) and add a batch dimension
+        x = x.permute(2, 0, 1).unsqueeze(0)
         x = self.conv(x)
-        x = x.view(x.size(0), -1)  # Flatten the tensor
+        x = x.view(x.size(0), -1)
         x = self.fc(x)
-        return x.squeeze()  # Remove the batch dimension
+        return x.squeeze()
 
 
-def policy_gradient(env, policy, episodes, gamma, lr):
+def policy_gradient(env, policy, episodes, lr):
     optimizer = optim.Adam(policy.parameters(), lr=lr)
 
     for i in range(episodes):
@@ -57,7 +56,7 @@ def policy_gradient(env, policy, episodes, gamma, lr):
             probs = policy(state)
             action = torch.multinomial(probs, 1)
 
-            # print(actions[action.item()])
+            print(actions[action.item()])
 
             next_state, reward, terminated, truncated, info = env.step(action.item())
 
@@ -68,19 +67,24 @@ def policy_gradient(env, policy, episodes, gamma, lr):
 
             done = terminated or truncated or reward == -1
 
-        print(f"Episode: {i}, Reward: {sum(rewards)}")
+        print(f"Episode: {i}, Rewards: {sum(rewards)}")
 
         optimizer.zero_grad()
         loss = -torch.sum(torch.stack(log_probs) * torch.tensor(rewards))
         loss.backward()
         optimizer.step()
 
+        # Save model
+        torch.save(policy.state_dict(), "pong.pth")
+
     return policy
 
 
-# Example usage
 env = gym.make("Pong-v4", mode=1, obs_type="rgb", render_mode="human")
 state, info = env.reset()  # state.shape = (210, 160, 3)
 
 policy = Policy(env.action_space.n)
-policy_gradient(env, policy, episodes=1000, gamma=0.99, lr=1)
+# if os.path.exists("pong.pth"):
+# policy.load_state_dict(torch.load("pong.pth"))
+
+policy_gradient(env, policy, episodes=1000, lr=0.1)
