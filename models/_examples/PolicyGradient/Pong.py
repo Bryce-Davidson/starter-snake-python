@@ -3,22 +3,35 @@ import torch.nn as nn
 import torch.optim as optim
 import gymnasium as gym
 
+# set seed
+torch.manual_seed(0)
+
 
 class Policy(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(Policy, self).__init__()
-        self.fc1 = nn.Linear(state_dim, 10000)
-        self.fc2 = nn.Linear(10000, 5000)
-        self.fc3 = nn.Linear(5000, action_dim)
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, 10000),
+            nn.ReLU(),
+            nn.Linear(10000, 5000),
+            nn.ReLU(),
+            nn.Linear(5000, 2000),
+            nn.ReLU(),
+            nn.Linear(2000, 1000),
+            nn.ReLU(),
+            nn.Linear(1000, 500),
+            nn.ReLU(),
+            nn.Linear(500, 100),
+            nn.ReLU(),
+            nn.Linear(100, 50),
+            nn.ReLU(),
+            nn.Linear(50, action_dim),
+            nn.Softmax(dim=0),
+        )
 
     def forward(self, x):
         x = torch.flatten(x)
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
-        x = torch.softmax(x, dim=0)
-
-        exit()
+        x = self.network(x)
 
         return x
 
@@ -34,8 +47,14 @@ def policy_gradient(env, policy, episodes, gamma, lr):
 
         while not done:
             state = torch.tensor(state, dtype=torch.float32)
+
             action = policy(state)
-            next_state, reward, done, _ = env.step(action)
+
+            next_state, reward, terminated, truncated, info = env.step(
+                torch.argmax(action).item()
+            )
+
+            done = terminated or truncated
             log_prob = torch.log(action)
             log_probs.append(log_prob)
             rewards.append(reward)
@@ -50,7 +69,7 @@ def policy_gradient(env, policy, episodes, gamma, lr):
 
 
 # Example usage
-env = gym.make("Pong-v4", obs_type="grayscale")
+env = gym.make("Pong-v4", obs_type="grayscale", render_mode="human")
 state, info = env.reset()  # state.shape = (210, 160) -> (33600,)
 
 policy = Policy(state_dim=33600, action_dim=env.action_space.n)
