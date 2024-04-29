@@ -57,7 +57,13 @@ class DQN(nn.Module):
                 self.features(torch.zeros(1, 3, 96, 96)).view(1, -1).size(1), 512
             ),
             nn.ReLU(),
-            nn.Linear(512, self.action_shape),
+            nn.Linear(512, 200),
+            nn.Tanh(),
+            nn.Linear(200, 100),
+            nn.Tanh(),
+            nn.Linear(100, 200),
+            nn.Tanh(),
+            nn.Linear(200, self.action_shape),
         )
 
     def forward(self, x):
@@ -86,18 +92,18 @@ env = gym.make(
 )
 
 episodes = 100
-max_steps = 500
+max_steps = 1000
 mem_capacity = 2000
-sample_size = 200
+sample_size = 1000
 
 epsilon = 1.0
-decay = 0.95
-gamma = 0.9
+decay = 0.99
+gamma = 0.95
 
 model = DQN(env.action_space.n)
 memory = ReplayBuffer(capacity=mem_capacity)
 
-optimizer = optim.Adam(model.parameters(), lr=0.0001)
+optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
 for i in range(episodes):
     state, info = env.reset(options={"randomize": False})
@@ -124,22 +130,19 @@ for i in range(episodes):
     print(f"Episode: {i}, Reward: {R}, Epsilon: {epsilon}, Memory: {len(memory)}")
 
     if len(memory) > mem_capacity:
-        for _ in range(5):
-            batch = memory.sample(sample_size)
-            for state, action, reward, next_state, terminated in batch:
-                next_state = (
-                    torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
-                )
+        batch = memory.sample(sample_size)
+        for state, action, reward, next_state, terminated in batch:
+            next_state = torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
 
-                Qt = model(state).squeeze(0)[action]
-                Qt1 = torch.argmax(model(next_state))
+            Qt = model(state).squeeze(0)[action]
+            Qt1 = torch.argmax(model(next_state))
 
-                target = reward + (1 - terminated) * gamma * Qt1
-                loss = torch.pow(target - Qt, 2)
+            target = reward + (1 - terminated) * gamma * Qt1
+            loss = torch.pow(target - Qt, 2)
 
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
     if i % 10 == 0:
         torch.save(model.state_dict(), "model.pth")
