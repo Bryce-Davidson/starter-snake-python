@@ -50,13 +50,15 @@ memory = []
 
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
+episodes = 100
+max_steps = 200
+mem_size = 200
+sample_size = 100
+
 epsilon = 1.0
 decay = 0.999
 gamma = 0.9
-episodes = 1000
-max_steps = 300
-mem_size = 300
-sample_size = 100
+
 
 for i in range(episodes):
     state, info = env.reset(options={"randomize": False})
@@ -71,6 +73,8 @@ for i in range(episodes):
 
         next_state, reward, terminated, truncated, info = env.step(action)
 
+        if len(memory) > mem_size:
+            memory.pop(0)
         memory.append((state, action, reward, next_state, terminated))
 
         R += reward
@@ -96,7 +100,7 @@ for i in range(episodes):
             loss.backward()
             optimizer.step()
 
-    if i % 100 == 0:
+    if i % 10 == 0:
         torch.save(model.state_dict(), "model.pth")
 
 # -------------------------------------------------
