@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import random
-from torch.autograd import Variable
 import numpy as np
 
 
@@ -39,20 +38,21 @@ class DQN(nn.Module):
         if np.random.rand() < epsilon:
             return np.random.randint(0, self.action_shape)
         else:
-            return self.forward(state).max(1)[1].item()
+            action = self.forward(state).max(1)[1].item()
+            return action
 
 
-# -------------------------------------------------
+# # -------------------------------------------------
 
 env = gym.make("CarRacing-v2", continuous=False, domain_randomize=True)
 model = DQN(env.action_space.n)
 memory = []
 
-optimizer = optim.Adam(model.parameters(), lr=0.0001)
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 episodes = 100
-max_steps = 200
-mem_size = 200
+max_steps = 100
+mem_size = 1000
 sample_size = 100
 
 epsilon = 1.0
@@ -87,14 +87,16 @@ for i in range(episodes):
     print(f"Episode: {i}, Reward: {R}, Epsilon: {epsilon}")
 
     if len(memory) > mem_size:
-        batch = random.sample(memory, 100)
+        batch = random.sample(memory, sample_size)
         for state, action, reward, next_state, terminated in batch:
             next_state = torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
 
             Qt = model(state)[0][action]
             Qt1 = model(next_state).max(1)[0].detach()
 
-            loss = torch.pow((reward + gamma * Qt1) - Qt, 2)
+            target = reward + (1 - terminated) * gamma * Qt1
+
+            loss = torch.pow(target - Qt, 2)
 
             optimizer.zero_grad()
             loss.backward()
@@ -109,6 +111,8 @@ env = gym.make(
     "CarRacing-v2", continuous=False, domain_randomize=True, render_mode="human"
 )
 
+model.load_state_dict(torch.load("model.pth"))
+
 for i in range(episodes):
     state, info = env.reset(options={"randomize": False})
 
@@ -117,4 +121,5 @@ for i in range(episodes):
     while not terminated and not truncated:
         state = torch.tensor(state).permute(2, 0, 1).unsqueeze(0).float()
         action = model.act(state, 0)
+        print(f"Action: {action}")
         state, reward, terminated, truncated, info = env.step(action)
