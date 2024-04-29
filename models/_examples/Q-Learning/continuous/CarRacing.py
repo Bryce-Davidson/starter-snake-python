@@ -5,11 +5,21 @@ import torch.optim as optim
 import random
 import numpy as np
 
-# 0: do nothing
-# 1: steer left
-# 2: steer right
-# 3: gas
-# 4: brake
+# ---------------------------------------------------------
+# This is not a very good example.
+
+# To implement something which works other methods need to be used.
+
+# References:
+
+# - https://dspace.cvut.cz/bitstream/handle/10467/108761/F3-BP-2023-Sykora-Vojtech-PPO_Thesis_Sykora.pdf?sequence=-1&isAllowed=y
+
+# ---------------------------------------------------------
+
+
+# Set the seed for reproducibility
+seed = 9999
+torch.manual_seed(seed)
 
 actions = {
     0: "do nothing",
@@ -58,12 +68,12 @@ class DQN(nn.Module):
             ),
             nn.ReLU(),
             nn.Linear(512, 200),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(200, 100),
-            nn.Tanh(),
-            nn.Linear(100, 200),
-            nn.Tanh(),
-            nn.Linear(200, self.action_shape),
+            nn.ReLU(),
+            nn.Linear(100, 50),
+            nn.ReLU(),
+            nn.Linear(50, self.action_shape),
         )
 
     def forward(self, x):
@@ -91,30 +101,30 @@ env = gym.make(
     render_mode="human",
 )
 
-episodes = 100
-max_steps = 1000
-mem_capacity = 2000
-sample_size = 1000
+EPISODES = 10
+EPISODE_MAX_STEPS = 2000
+MEMORY_CAPACITY = 2000
+MEMORY_SAMPLE_SIZE = 1000
 
-epsilon = 1.0
-decay = 0.99
-gamma = 0.95
+EPSILON = 0.5
+EPSILON_DECAY = 0.9
+GAMMA = 0.9
 
 model = DQN(env.action_space.n)
-memory = ReplayBuffer(capacity=mem_capacity)
+memory = ReplayBuffer(capacity=MEMORY_CAPACITY)
 
 optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
-for i in range(episodes):
+for i in range(EPISODES):
     state, info = env.reset(options={"randomize": False})
 
     R = 0
     terminated, truncated = False, False
 
     steps = 0
-    while not terminated and not truncated and steps < max_steps:
+    while not terminated and not truncated and steps < EPISODE_MAX_STEPS:
         state = torch.tensor(state).permute(2, 0, 1).unsqueeze(0).float()
-        action = model.act(state, epsilon)
+        action = model.act(state, EPSILON)
 
         next_state, reward, terminated, truncated, info = env.step(action)
 
@@ -125,19 +135,19 @@ for i in range(episodes):
 
         steps += 1
 
-    epsilon *= decay
+    EPSILON *= EPSILON_DECAY
 
-    print(f"Episode: {i}, Reward: {R}, Epsilon: {epsilon}, Memory: {len(memory)}")
+    print(f"Episode: {i}, Reward: {R}, Epsilon: {EPSILON}, Memory: {len(memory)}")
 
-    if len(memory) > mem_capacity:
-        batch = memory.sample(sample_size)
+    if len(memory) > MEMORY_CAPACITY:
+        batch = memory.sample(MEMORY_SAMPLE_SIZE)
         for state, action, reward, next_state, terminated in batch:
             next_state = torch.tensor(next_state).permute(2, 0, 1).unsqueeze(0).float()
 
             Qt = model(state).squeeze(0)[action]
-            Qt1 = torch.argmax(model(next_state))
+            Qt1 = model(next_state).max().item()
 
-            target = reward + (1 - terminated) * gamma * Qt1
+            target = reward + (1 - terminated) * GAMMA * Qt1
             loss = torch.pow(target - Qt, 2)
 
             optimizer.zero_grad()
@@ -153,7 +163,7 @@ env = gym.make("CarRacing-v2", continuous=False, render_mode="human")
 
 model.load_state_dict(torch.load("model.pth"))
 
-for i in range(episodes):
+for i in range(EPISODES):
     state, info = env.reset(options={"randomize": False})
 
     terminated, truncated = False, False
