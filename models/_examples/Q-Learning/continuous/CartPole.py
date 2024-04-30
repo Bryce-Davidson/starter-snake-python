@@ -69,8 +69,6 @@ n_observations = len(state)
 
 policy_net = DQN(n_observations, n_actions)
 target_net = DQN(n_observations, n_actions)
-
-# Initialize the target network with the same weights as the policy network
 target_net.load_state_dict(policy_net.state_dict())
 
 optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)

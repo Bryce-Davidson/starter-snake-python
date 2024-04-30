@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import torch.nn as nn
@@ -23,10 +24,16 @@ class Critic(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=8, stride=4),
             nn.ReLU(),
+            nn.BatchNorm2d(32),
+            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(32, 64, kernel_size=4, stride=2),
             nn.ReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(64, 64, kernel_size=3, stride=1),
             nn.ReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2, stride=2),
         )
 
         o = self.conv(torch.zeros(1, *[3, 210, 160]))
@@ -52,10 +59,16 @@ class Actor(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=8, stride=4),
             nn.ReLU(),
+            nn.BatchNorm2d(32),
+            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(32, 64, kernel_size=4, stride=2),
             nn.ReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.Conv2d(64, 64, kernel_size=3, stride=1),
             nn.ReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(kernel_size=2, stride=2),
         )
 
         o = self.conv(torch.zeros(1, *[3, 210, 160]))
@@ -64,7 +77,17 @@ class Actor(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(conv_out_size, 512),
             nn.ReLU(),
-            nn.Linear(512, action_dim),
+            nn.Dropout(0.5),
+            nn.Linear(512, 200),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(200, 100),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(100, 50),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(50, action_dim),
             nn.Softmax(dim=1),
         )
 
@@ -76,9 +99,9 @@ class Actor(nn.Module):
         return x.squeeze()
 
 
-def actor_critic(env, actor, critic, gamma, episodes, lr):
-    actor_optimizer = optim.Adam(actor.parameters(), lr=lr)
-    critic_optimizer = optim.Adam(critic.parameters(), lr=lr)
+def actor_critic(env, actor, critic, gamma, episodes, alr=1e-5, clr=1e-2):
+    actor_optimizer = optim.Adam(actor.parameters(), lr=alr)
+    critic_optimizer = optim.Adam(critic.parameters(), lr=clr)
 
     for i in range(episodes):
         state, info = env.reset()
@@ -93,7 +116,6 @@ def actor_critic(env, actor, critic, gamma, episodes, lr):
 
         while not done:
             probs = actor(state)
-            print(probs)
             action = torch.multinomial(probs, 1)
 
             next_state, reward, terminated, truncated, info = env.step(action.item())
@@ -114,10 +136,10 @@ def actor_critic(env, actor, critic, gamma, episodes, lr):
         rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1)
         next_states = torch.cat(next_states)
 
-        print(states.shape)
-        print(actions.shape)
-        print(rewards.shape)
-        print(next_states.shape)
+        # print(states.shape)
+        # print(actions.shape)
+        # print(rewards.shape)
+        # print(next_states.shape)
 
         values = critic(states)
         next_values = critic(next_states)
@@ -136,28 +158,23 @@ def actor_critic(env, actor, critic, gamma, episodes, lr):
         actor_loss.backward()
         actor_optimizer.step()
 
-        # Save model
-        torch.save(actor.state_dict(), "pong.pth")
+        # Save models
+        torch.save(actor.state_dict(), "actor-pong.pth")
+        torch.save(critic.state_dict(), "critic-pong.pth")
 
         print(f"Episode: {i}, Rewards: {sum(rewards).item()}")
 
     return actor
 
 
-env = gym.make("Pong-v4", mode=1, obs_type="rgb", render_mode="human")
+# env = gym.make("Pong-v4", mode=1, obs_type="rgb", render_mode="human")
+env = gym.make("Pong-v4", mode=1, obs_type="rgb")
 state, info = env.reset()  # state.shape = (210, 160, 3)
 
 actor = Actor(env.action_space.n)
-
-
-def weights_init(m):
-    if isinstance(m, nn.Linear):
-        nn.init.constant_(m.weight, 0)
-        if m.bias is not None:
-            nn.init.constant_(m.bias, 0)
-
+if os.path.exists("pong.pth"):
+    actor.load_state_dict(torch.load("pong.pth"))
 
 critic = Critic()
-critic.fc.apply(weights_init)
 
-actor_critic(env, actor, critic, gamma=0.999, episodes=1000, lr=0.001)
+actor_critic(env, actor, critic, gamma=0.999, episodes=1000, alr=1e-5, clr=1e-2)
