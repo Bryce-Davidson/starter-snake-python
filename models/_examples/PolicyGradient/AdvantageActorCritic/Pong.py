@@ -93,6 +93,7 @@ def actor_critic(env, actor, critic, gamma, episodes, lr):
 
         while not done:
             probs = actor(state)
+            print(probs)
             action = torch.multinomial(probs, 1)
 
             next_state, reward, terminated, truncated, info = env.step(action.item())
@@ -113,28 +114,27 @@ def actor_critic(env, actor, critic, gamma, episodes, lr):
         rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1)
         next_states = torch.cat(next_states)
 
-        # print(states.shape)
-        # print(actions.shape)
-        # print(rewards.shape)
-        # print(next_states.shape)
+        print(states.shape)
+        print(actions.shape)
+        print(rewards.shape)
+        print(next_states.shape)
 
         values = critic(states)
         next_values = critic(next_states)
 
-        td_targets = rewards + gamma * next_values * (1 - done)
+        td_targets = rewards.detach() + gamma * next_values * (1 - done)
         advantages = td_targets.detach() - values
+        log_probs = torch.log(actor(states)).gather(1, actions)
 
         critic_optimizer.zero_grad()
         critic_loss = advantages.pow(2).mean()
         critic_loss.backward()
         critic_optimizer.step()
 
-        if i % 10 == 0:
-            log_probs = torch.log(actor(states)).gather(1, actions)
-            actor_optimizer.zero_grad()
-            actor_loss = torch.mean(-(log_probs * advantages.detach()))
-            actor_loss.backward()
-            actor_optimizer.step()
+        actor_optimizer.zero_grad()
+        actor_loss = -torch.mean(log_probs * advantages.detach())
+        actor_loss.backward()
+        actor_optimizer.step()
 
         # Save model
         torch.save(actor.state_dict(), "pong.pth")
@@ -144,10 +144,20 @@ def actor_critic(env, actor, critic, gamma, episodes, lr):
     return actor
 
 
-env = gym.make("Pong-v4", mode=1, obs_type="rgb")
+env = gym.make("Pong-v4", mode=1, obs_type="rgb", render_mode="human")
 state, info = env.reset()  # state.shape = (210, 160, 3)
 
 actor = Actor(env.action_space.n)
-critic = Critic()
 
-actor_critic(env, actor, critic, gamma=0.999, episodes=1000, lr=0.0001)
+
+def weights_init(m):
+    if isinstance(m, nn.Linear):
+        nn.init.constant_(m.weight, 0)
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0)
+
+
+critic = Critic()
+critic.fc.apply(weights_init)
+
+actor_critic(env, actor, critic, gamma=0.999, episodes=1000, lr=0.001)
