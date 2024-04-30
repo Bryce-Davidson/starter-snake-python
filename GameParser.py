@@ -1,20 +1,16 @@
-import pandas as pd
-import numpy as np
-import json
-import os
-
 import numpy as np
 import typing
+import json
 
 
 class Perspective:
-    EMPTY_CODE = 0
-    FOOD_CODE = 1
-    HAZARD_CODE = 2
-    YOU_BODY_CODE = 3
-    YOU_HEAD_CODE = 4
-    ENEMY_BODY_CODE = 5
-    ENEMY_HEAD_CODE = 6
+    EMPTY_PLANE = 0
+    FOOD_PLANE = 1
+    HAZARD_PLANE = 2
+    YOU_BODY_PLANE = 3
+    YOU_HEAD_PLANE = 4
+    ENEMY_BODIES_PLANE = 5
+    ENEMY_HEADS_PLANE = 6
 
     def __init__(self, snakeId: str, step: typing.Dict):
         self.turn = step["turn"]
@@ -23,46 +19,55 @@ class Perspective:
         self.maxY = self.board["height"]
         self.maxX = self.board["width"]
 
+        self.id = snakeId
         self.head = None
         self.move = None
         self.health = None
         self.length = None
 
-        self.state = np.zeros((self.maxY, self.maxX))
+        self.state = np.zeros((7, self.maxY, self.maxX))
 
-        codes = {
-            (True, True): Perspective.YOU_HEAD_CODE,
-            (True, False): Perspective.YOU_BODY_CODE,
-            (False, True): Perspective.ENEMY_HEAD_CODE,
-            (False, False): Perspective.ENEMY_BODY_CODE,
+        plane_code = {
+            (True, True): Perspective.YOU_HEAD_PLANE,
+            (True, False): Perspective.YOU_BODY_PLANE,
+            (False, True): Perspective.ENEMY_HEADS_PLANE,
+            (False, False): Perspective.ENEMY_BODIES_PLANE,
         }
 
         for snake in step["board"]["snakes"]:
             if snake["id"] == snakeId:
-                self.head = np.array([snake["head"]["x"], snake["head"]["y"]])
-                self.health = snake["health"]
-                self.length = snake["length"]
                 self.move = snake["move"]
+                self.health = snake["health"]
+                self.head = snake["head"]
+                self.length = snake["length"]
 
             for i, point in enumerate(snake["body"]):
                 IS_HEAD = i == 0
                 condition = (snake["id"] == snakeId, IS_HEAD)
-                self.state[point["y"]][point["x"]] = codes[condition]
+                self.state[plane_code[condition]][point["y"]][point["x"]] = 1
 
         for point in step["board"]["hazards"]:
-            self.state[point["y"]][point["x"]] = Perspective.HAZARD_CODE
+            self.state[Perspective.HAZARD_PLANE][point["y"]][point["x"]] = 1
 
         for point in step["board"]["food"]:
-            self.state[point["y"]][point["x"]] = Perspective.FOOD_CODE
+            self.state[Perspective.FOOD_PLANE][point["y"]][point["x"]] = 1
 
     @property
     def action(self):
         actions = {"up": 0, "right": 1, "down": 2, "left": 3}
         return actions[self.move]
 
+    @property
+    def view(self):
+        view = np.zeros((self.maxY, self.maxX))
+        for i, plane in enumerate(self.state):
+            view += plane * i
+
+        return view
+
     def __str__(self):
         string = ""
-        for row in self.state[::-1]:
+        for row in self.view[::-1]:
             for cell in row:
                 string += str(int(cell)) + " "
             string += "\n"
@@ -132,7 +137,7 @@ if __name__ == "__main__":
             reward = 0
             trajectory.append((perspective.state, perspective.action))
 
-            print(f"snakeId: {snakeId}, turn: {i}")
+            # print(f"snakeId: {snakeId}, turn: {i}")
             print(perspective)
-            print(perspective.action)
-            print(reward)
+            # print(perspective.action)
+            # print(reward)
