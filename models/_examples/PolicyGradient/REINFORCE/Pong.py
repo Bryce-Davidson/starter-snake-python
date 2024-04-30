@@ -28,9 +28,15 @@ class Policy(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Linear(conv_out_size, 512),
-            nn.ReLU(),
-            nn.Linear(512, action_dim),
-            nn.Softmax(dim=0),
+            nn.Tanh(),
+            nn.Linear(512, 200),
+            nn.Tanh(),
+            nn.Linear(200, 100),
+            nn.Tanh(),
+            nn.Linear(100, 50),
+            nn.Tanh(),
+            nn.Linear(50, action_dim),
+            nn.Softmax(dim=1),
         )
 
     def forward(self, x):
@@ -55,9 +61,10 @@ def policy_gradient(env, policy, episodes, lr):
             state = torch.tensor(state, dtype=torch.float32)
 
             probs = policy(state)
+            print(probs)
             action = torch.multinomial(probs, 1)
 
-            print(actions[action.item()])
+            # print(actions[action.item()])
 
             next_state, reward, terminated, truncated, info = env.step(action.item())
 
@@ -71,7 +78,9 @@ def policy_gradient(env, policy, episodes, lr):
         print(f"Episode: {i}, Rewards: {sum(rewards)}")
 
         optimizer.zero_grad()
-        loss = -torch.sum(torch.stack(log_probs) * torch.tensor(rewards))
+        log_probs = torch.stack(log_probs)
+        rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1)
+        loss = -torch.mean(log_probs * rewards)
         loss.backward()
         optimizer.step()
         scheduler.step()

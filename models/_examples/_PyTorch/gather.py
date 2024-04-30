@@ -6,7 +6,7 @@ print("Original Tensor:")
 print(tensor)
 
 # Create a tensor for indices
-indices = torch.tensor([[0, 0], [1, 1]])
+indices = torch.tensor([[0], [1]])
 print("\nIndices:")
 print(indices)
 
