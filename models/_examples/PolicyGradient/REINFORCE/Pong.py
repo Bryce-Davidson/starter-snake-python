@@ -43,6 +43,7 @@ class Policy(nn.Module):
 
 def policy_gradient(env, policy, episodes, lr):
     optimizer = optim.Adam(policy.parameters(), lr=lr)
+    scheduler = optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.001, max_lr=0.1)
 
     for i in range(episodes):
         state, info = env.reset()
@@ -73,6 +74,7 @@ def policy_gradient(env, policy, episodes, lr):
         loss = -torch.sum(torch.stack(log_probs) * torch.tensor(rewards))
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         # Save model
         torch.save(policy.state_dict(), "pong.pth")
