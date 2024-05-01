@@ -14,7 +14,7 @@ class Perspective:
 
     def __init__(self, youId: str, enemyOrder: list, step: typing.Dict):
         self.turn = step["turn"]
-        self.enemyOrder = enemyOrder
+        self.enemyOffset = {id: i + 1 for i, id in enumerate(enemyOrder)}
 
         self.board = step["board"]
         self.maxY = self.board["height"]
@@ -26,7 +26,7 @@ class Perspective:
         self.health = None
         self.length = None
 
-        if len(self.enemyOrder) > 4:
+        if len(self.enemyOffset) > 4:
             raise ValueError("Too many enemies")
 
         self.state = np.zeros((Perspective.NUM_PLANES, self.maxY, self.maxX))
@@ -41,16 +41,12 @@ class Perspective:
             for i, point in enumerate(snake["body"]):
                 # start at you body plane
                 plane = Perspective.YOU_BODY_PLANE
-                # add 1 if head
+                # add 1 to plane if enemy
+                plane += snake["id"] in self.enemyOffset
+                # add enemy offset
+                plane += self.enemyOffset.get(snake["id"], 0)
+                # add 1 to plane if head
                 plane += i == 0
-                # add enemy offset if enemy
-                plane += (
-                    self.enemyOrder.index(snake["id"]) + 1
-                    if snake["id"] in self.enemyOrder
-                    else 0
-                )
-
-                print(f"{i}, plane: {plane}")
 
                 self.state[plane][point["y"]][point["x"]] = 1
 
@@ -124,8 +120,9 @@ class Game:
                 enemyOrder = self.snakeOrder.copy()
                 enemyOrder.remove(snakeId)
 
-                self.perspectives[snakeId].append
-                (Perspective(snakeId, enemyOrder, step))
+                self.perspectives[snakeId].append(
+                    Perspective(snakeId, enemyOrder, step)
+                )
 
     def __len__(self):
         return len(self.steps)
