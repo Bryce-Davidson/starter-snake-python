@@ -138,22 +138,14 @@ if __name__ == "__main__":
     game = Game(file_path)
     game.to_json(output_path)
 
-    print(f"game length: {len(game)}")
-
-    trajectories = []
     for snakeId, persepctives in game.perspectives.items():
-        trajectory = []
-        for i, perspective in enumerate(persepctives):
-
+        for i, (p, p1) in enumerate(zip(persepctives, persepctives[1:])):
+            # flatten the state and add the action
+            state = p.state.flatten()
+            action = p.action
+            next_state = p1.state.flatten()
             reward = 0
-            trajectory.append((perspective.state, perspective.action))
+            if (i + 1) == len(persepctives) - 1:
+                reward = 1 if game.meta["winnerId"] == snakeId else -1
 
-            # print(f"snakeId: {snakeId}, turn: {i}")
-            # print(perspective)
-            # print(perspective.action)
-            # print(reward)
-
-        trajectories.append(trajectory)
-
-    # Store the trajectories as a numpy array
-    np.save(f"{output_path}/trajectories.npy", trajectories)
+            print(state.shape, action, next_state.shape, reward)
