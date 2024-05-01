@@ -4,8 +4,8 @@ import json
 
 
 class Perspective:
-    # 13 = 3 item planes + 2 you planes + 8 enemy planes (1 body, 1 head)
-    NUM_PLANES = 13
+    # 11 = 3 item planes + 2 you planes + 6 enemy planes (1 body, 1 head)
+    NUM_PLANES = 11
 
     EMPTY_PLANE = 0
     FOOD_PLANE = 1
@@ -27,7 +27,7 @@ class Perspective:
         self.health = None
         self.length = None
 
-        if len(self.enemyOffset) > 4:
+        if len(self.enemyOffset) > 3:
             raise ValueError("Too many enemies")
 
         self.state = np.zeros((Perspective.NUM_PLANES, self.maxY, self.maxX))

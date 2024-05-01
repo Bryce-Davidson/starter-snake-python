@@ -15,7 +15,11 @@ def launch():
         "http://localhost:8001",
         "--url",
         "http://localhost:8001",
-        "--browser",
+        "--url",
+        "http://localhost:8001",
+        "--url",
+        "http://localhost:8001",
+        # "--browser",
         "--board-url",
         "http://localhost:5173/",
         # "-g",
@@ -26,6 +30,7 @@ def launch():
         # "0",
     ]
 
+    # os.system(" ".join(args) + " > /dev/null 2>&1")
     os.system(" ".join(args))
 
 
