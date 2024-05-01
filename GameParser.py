@@ -4,67 +4,49 @@ import json
 
 
 class Perspective:
-    NUM_PLANES = 13
+    NUM_PLANES = 13  # 3 item planes + 2 you planes + 8 enemy planes
 
     EMPTY_PLANE = 0
     FOOD_PLANE = 1
     HAZARD_PLANE = 2
-
     YOU_BODY_PLANE = 3
     YOU_HEAD_PLANE = 4
 
-    ENEMY_ONE_BODY_PLANE = 5
-    ENEMY_ONE_HEAD_PLANE = 6
-    ENEMY_TWO_BODY_PLANE = 7
-    ENEMY_TWO_HEAD_PLANE = 8
-    ENEMY_THREE_BODY_PLANE = 9
-    ENEMY_THREE_HEAD_PLANE = 10
-    ENEMY_FOUR_BODY_PLANE = 11
-    ENEMY_FOUR_HEAD_PLANE = 12
-
-    def __init__(self, snakeId: str, step: typing.Dict):
+    def __init__(self, youId: str, enemyOrder: dict, step: typing.Dict):
         self.turn = step["turn"]
+        self.enemyOrder = enemyOrder
 
         self.board = step["board"]
         self.maxY = self.board["height"]
         self.maxX = self.board["width"]
 
-        self.id = snakeId
+        self.id = youId
         self.head = None
         self.move = None
         self.health = None
         self.length = None
 
-        self.enemy_ids = [
-            snake["id"] for snake in step["board"]["snakes"] if snake["id"] != snakeId
-        ]
-
-        if len(self.enemy_ids) > 4:
+        if len(self.enemyOrder) > 4:
             raise ValueError("Too many enemies")
-
-        self.enemy_plane = {
-            snakeId: (
-                Perspective.ENEMY_ONE_BODY_PLANE + (i * 2),
-                Perspective.ENEMY_ONE_HEAD_PLANE + (i * 2),
-            )
-            for i, snakeId in enumerate(self.enemy_ids)
-        }
-
-        print(self.enemy_plane)
-        exit()
 
         self.state = np.zeros((Perspective.NUM_PLANES, self.maxY, self.maxX))
 
         for snake in step["board"]["snakes"]:
-            IS_YOU = snake["id"] == snakeId
-            if IS_YOU:
+            if snake["id"] == self.id:
                 self.move = snake["move"]
                 self.health = snake["health"]
                 self.head = snake["head"]
                 self.length = snake["length"]
 
             for i, point in enumerate(snake["body"]):
-                IS_HEAD = i == 0
+                # start at you body plane
+                plane = Perspective.YOU_BODY_PLANE
+                # add 1 if head
+                plane += i == 0
+                # add enemy offset if enemy
+                plane += self.enemyOrder.get(snake["id"], 0)
+
+                self.state[plane][point["y"]][point["x"]] = 1
 
         for point in step["board"]["hazards"]:
             self.state[Perspective.HAZARD_PLANE][point["y"]][point["x"]] = 1
@@ -112,18 +94,21 @@ class Game:
 
         # --- Parse steps ---
         with open(self.input_path, "r") as log_file:
-            json_objs = [json.loads(line) for line in log_file]
+            objs = [json.loads(line) for line in log_file]
 
-        self.start = json_objs[0]
+        self.start = objs[0]
         self.meta = {"id": self.start["id"], "map": self.start["map"]}
 
-        self.end = json_objs[-1]
+        self.end = objs[-1]
         self.meta.update(
             {"winnerId": self.end["winnerId"], "isDraw": self.end["isDraw"]}
         )
 
-        self.steps = json_objs[1:-1]
-        self.snakeIds = [snake["id"] for snake in self.steps[0]["board"]["snakes"]]
+        self.steps = objs[1:-1]
+
+        self.snakeOrder = {
+            snake["id"]: i for i, snake in enumerate(self.start["snakes"])
+        }
 
         # --- Create perspectives ---
         for step in self.steps:
@@ -131,7 +116,11 @@ class Game:
                 snakeId = snake["id"]
                 if snakeId not in self.perspectives:
                     self.perspectives[snakeId] = []
-                self.perspectives[snakeId].append(Perspective(snakeId, step))
+
+                enemyOrder = self.snakeOrder.copy().pop(snakeId)
+                self.perspectives[snakeId].append(
+                    Perspective(snakeId, enemyOrder, step)
+                )
 
     def __len__(self):
         return len(self.steps)
