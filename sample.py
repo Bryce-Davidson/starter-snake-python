@@ -1,39 +1,50 @@
 import os
-import json
-import numpy as np
 from multiprocessing import Process
-from battlesnake_gym.snake_gym import BattlesnakeGym
 
 
-def reset_env():
-    print("Resetting game...")
+def launch():
+    print("Launching game...")
     args = [
         "./battlesnake",
         "play",
-        "--name",
-        "Python Starter Project",
+        "--output",
+        "./data/out.log",
+        "--timeout",
+        "10000",
         "--url",
-        "http://localhost:8000",
-        "-g",
-        "solo",
-        # "--browser",
+        "http://localhost:8001",
+        "--url",
+        "http://localhost:8001",
+        "--browser",
         "--board-url",
         "http://localhost:5173/",
-        "--foodSpawnChance",
-        "0",
-        "--minimumFood",
-        "0",
+        # "-g",
+        # "solo",
+        # "--foodSpawnChance",
+        # "0",
+        # "--minimumFood",
+        # "0",
     ]
 
     os.system(" ".join(args))
 
 
-env = BattlesnakeGym(map_size=(20, 20), number_of_snakes=1)
+def parse():
+    print("Parsing game...")
+    args = [
+        "python",
+        "GameParser.py",
+    ]
+
+    os.system(" ".join(args))
+
 
 if __name__ == "__main__":
-    done = False
+    for i in range(1):
+        game = Process(target=launch)
+        game.start()
+        game.join()
 
-    while not done:
-        action = env.action_space.sample()
-        obs, reward, done, info = env.step([0])
-        print(f"Action: {action}, Reward: {reward}, Done: {done}")
+        parser = Process(target=parse)
+        parser.start()
+        parser.join()

@@ -4,7 +4,8 @@ import json
 
 
 class Perspective:
-    NUM_PLANES = 13  # 3 item planes + 2 you planes + 8 enemy planes
+    # 13 = 3 item planes + 2 you planes + 8 enemy planes (1 body, 1 head)
+    NUM_PLANES = 13
 
     EMPTY_PLANE = 0
     FOOD_PLANE = 1
@@ -146,7 +147,7 @@ if __name__ == "__main__":
             reward = 0
             trajectory.append((perspective.state, perspective.action))
 
-            print(f"snakeId: {snakeId}, turn: {i}")
-            print(perspective)
+            # print(f"snakeId: {snakeId}, turn: {i}")
+            # print(perspective)
             # print(perspective.action)
             # print(reward)
