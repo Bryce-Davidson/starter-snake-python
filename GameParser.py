@@ -12,7 +12,7 @@ class Perspective:
     YOU_BODY_PLANE = 3
     YOU_HEAD_PLANE = 4
 
-    def __init__(self, youId: str, enemyOrder: dict, step: typing.Dict):
+    def __init__(self, youId: str, enemyOrder: list, step: typing.Dict):
         self.turn = step["turn"]
         self.enemyOrder = enemyOrder
 
@@ -44,7 +44,13 @@ class Perspective:
                 # add 1 if head
                 plane += i == 0
                 # add enemy offset if enemy
-                plane += self.enemyOrder.get(snake["id"], 0)
+                plane += (
+                    self.enemyOrder.index(snake["id"]) + 1
+                    if snake["id"] in self.enemyOrder
+                    else 0
+                )
+
+                print(f"{i}, plane: {plane}")
 
                 self.state[plane][point["y"]][point["x"]] = 1
 
@@ -106,9 +112,7 @@ class Game:
 
         self.steps = objs[1:-1]
 
-        self.snakeOrder = {
-            snake["id"]: i for i, snake in enumerate(self.steps[0]["board"]["snakes"])
-        }
+        self.snakeOrder = [snake["id"] for snake in self.steps[0]["board"]["snakes"]]
 
         # --- Create perspectives ---
         for step in self.steps:
@@ -118,11 +122,10 @@ class Game:
                     self.perspectives[snakeId] = []
 
                 enemyOrder = self.snakeOrder.copy()
-                enemyOrder.pop(snakeId)
+                enemyOrder.remove(snakeId)
 
-                self.perspectives[snakeId].append(
-                    Perspective(snakeId, enemyOrder, step)
-                )
+                self.perspectives[snakeId].append
+                (Perspective(snakeId, enemyOrder, step))
 
     def __len__(self):
         return len(self.steps)
@@ -148,7 +151,7 @@ if __name__ == "__main__":
             reward = 0
             trajectory.append((perspective.state, perspective.action))
 
-            # print(f"snakeId: {snakeId}, turn: {i}")
+            print(f"snakeId: {snakeId}, turn: {i}")
             print(perspective)
             # print(perspective.action)
             # print(reward)
