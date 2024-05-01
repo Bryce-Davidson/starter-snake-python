@@ -107,7 +107,7 @@ class Game:
         self.steps = objs[1:-1]
 
         self.snakeOrder = {
-            snake["id"]: i for i, snake in enumerate(self.start["snakes"])
+            snake["id"]: i for i, snake in enumerate(self.steps[0]["board"]["snakes"])
         }
 
         # --- Create perspectives ---
@@ -117,7 +117,9 @@ class Game:
                 if snakeId not in self.perspectives:
                     self.perspectives[snakeId] = []
 
-                enemyOrder = self.snakeOrder.copy().pop(snakeId)
+                enemyOrder = self.snakeOrder.copy()
+                enemyOrder.pop(snakeId)
+
                 self.perspectives[snakeId].append(
                     Perspective(snakeId, enemyOrder, step)
                 )
