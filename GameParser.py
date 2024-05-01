@@ -140,6 +140,7 @@ if __name__ == "__main__":
 
     print(f"game length: {len(game)}")
 
+    trajectories = []
     for snakeId, persepctives in game.perspectives.items():
         trajectory = []
         for i, perspective in enumerate(persepctives):
@@ -151,3 +152,8 @@ if __name__ == "__main__":
             # print(perspective)
             # print(perspective.action)
             # print(reward)
+
+        trajectories.append(trajectory)
+
+    # Store the trajectories as a numpy array
+    np.save(f"{output_path}/trajectories.npy", trajectories)
