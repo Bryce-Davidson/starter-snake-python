@@ -12,7 +12,7 @@ class Perspective:
     YOU_BODY_PLANE = 3
     YOU_HEAD_PLANE = 4
 
-    def __init__(self, youId: str, enemyOrder: list, step: typing.Dict):
+    def __init__(self, snakeId: str, enemyOrder: list, step: typing.Dict):
         self.turn = step["turn"]
         self.enemyOffset = {id: i + 2 for i, id in enumerate(enemyOrder)}
 
@@ -20,7 +20,7 @@ class Perspective:
         self.maxY = self.board["height"]
         self.maxX = self.board["width"]
 
-        self.id = youId
+        self.id = snakeId
         self.head = None
         self.move = None
         self.health = None
