@@ -31,7 +31,9 @@ class Perspective:
         if len(self.enemyOffset) > 3:
             raise ValueError("Too many enemies")
 
-        self.state = np.zeros((Perspective.NUM_PLANES, self.maxY, self.maxX))
+        self.state = np.zeros(
+            (Perspective.NUM_PLANES, self.maxY, self.maxX), dtype=np.int8
+        )
 
         for snake in step["board"]["snakes"]:
             if snake["id"] == self.id:
@@ -56,8 +58,9 @@ class Perspective:
         for point in step["board"]["food"]:
             self.state[Perspective.FOOD_PLANE][point["y"]][point["x"]] = 1
 
-    def flatten(self):
-        return self.state.flatten()
+    def encode(self):
+        flat = self.state.flatten()
+        return np.append(flat, self.action).astype(np.int8).tobytes()
 
     @property
     def action(self):
@@ -71,9 +74,6 @@ class Perspective:
             view = np.where(plane == 1, i, view)
 
         return view
-
-    def to_bytes(self):
-        return self.view.tobytes()
 
     def __str__(self):
         string = ""
@@ -92,10 +92,14 @@ class Game:
     def __init__(self, file_path):
         self.input_path = file_path
 
-        self.meta = {}
+        self.id = None
+        self.map = None
         self.steps = []
         self.snakeIds = None
         self.perspectives = {}
+
+        self.winnerId = None
+        self.isDraw = None
 
         self.start = None
         self.end = None
@@ -105,12 +109,12 @@ class Game:
             objs = [json.loads(line) for line in log_file]
 
         self.start = objs[0]
-        self.meta = {"id": self.start["id"], "map": self.start["map"]}
+        self.id = self.start["id"]
+        self.map = self.start["map"]
 
         self.end = objs[-1]
-        self.meta.update(
-            {"winnerId": self.end["winnerId"], "isDraw": self.end["isDraw"]}
-        )
+        self.winnerId = self.end["winnerId"]
+        self.isDraw = self.end["isDraw"]
 
         self.steps = objs[1:-1]
 
@@ -145,17 +149,27 @@ if __name__ == "__main__":
     game = Game(file_path)
     game.to_json(output_path)
 
-    trajectories = []
     for snakeId, persepctives in game.perspectives.items():
-        trajectory = []
         for i, p in enumerate(persepctives):
-            state = p.flatten()
-            action = p.action
+            # state = p.state.flatten()
+            # action = p.action
 
-            reward = 0
-            if (i + 1) == len(persepctives) - 1:
-                reward = 1 if game.meta["winnerId"] == snakeId else -1
+            # reward = 0
+            # if (i + 1) == len(persepctives) - 1:
+            # reward = 1 if game.meta["winnerId"] == snakeId else -1
 
-            print(f"Snake: {snakeId}, Step: {i}, Reward: {reward}")
+            with open("./data/states.bin", "ab") as f:
+                f.write(p.encode())
 
-            print(p)
+    print("Data written to file")
+    arrays = []
+    with open("./data/states.bin", "rb") as f:
+        byte_data_read = f.read()
+        print(len(byte_data_read))
+        for i in range(0, len(byte_data_read), 11**3 + 1):
+            arrays.append(
+                np.frombuffer(byte_data_read[i : i + 11**3 + 1], dtype=np.int8)
+            )
+
+    for array in arrays:
+        print(array)

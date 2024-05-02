@@ -1,18 +1,21 @@
 import numpy as np
 
 # specify the total size of the array
-total_size = 3**3
+total_size = 11**3
 a = np.zeros(total_size + 2, dtype=np.int8)
 a[:3] = 1
 np.random.shuffle(a)
-a[-2:] = 0
+a[-1] = 2
 print(a)
 b = a.copy()
 np.random.shuffle(b)
+b[-1] = 2
 print(b)
 c = a.copy()
 np.random.shuffle(c)
+c[-1] = 2
 print(c)
+
 
 # convert the numpy arrays to bytes
 byte_data = [a.tobytes(), b.tobytes(), c.tobytes()]
