@@ -1,10 +1,11 @@
+import pandas as pd
 import numpy as np
 import typing
 import json
 
 
 class Perspective:
-    # 11 = 3 item planes + 2 you planes + 6 enemy planes (1 body, 1 head)
+    # 11 = 3 entity planes + 2 you planes + 6 enemy planes (1 body, 1 head)
     NUM_PLANES = 11
 
     EMPTY_PLANE = 0
@@ -55,6 +56,9 @@ class Perspective:
         for point in step["board"]["food"]:
             self.state[Perspective.FOOD_PLANE][point["y"]][point["x"]] = 1
 
+    def flatten(self):
+        return self.state.flatten()
+
     @property
     def action(self):
         actions = {"up": 0, "right": 1, "down": 2, "left": 3}
@@ -67,6 +71,9 @@ class Perspective:
             view = np.where(plane == 1, i, view)
 
         return view
+
+    def to_bytes(self):
+        return self.view.tobytes()
 
     def __str__(self):
         string = ""
@@ -138,14 +145,17 @@ if __name__ == "__main__":
     game = Game(file_path)
     game.to_json(output_path)
 
+    trajectories = []
     for snakeId, persepctives in game.perspectives.items():
-        for i, (p, p1) in enumerate(zip(persepctives, persepctives[1:])):
-            # flatten the state and add the action
-            state = p.state.flatten()
+        trajectory = []
+        for i, p in enumerate(persepctives):
+            state = p.flatten()
             action = p.action
-            next_state = p1.state.flatten()
+
             reward = 0
             if (i + 1) == len(persepctives) - 1:
                 reward = 1 if game.meta["winnerId"] == snakeId else -1
 
-            print(state.shape, action, next_state.shape, reward)
+            print(f"Snake: {snakeId}, Step: {i}, Reward: {reward}")
+
+            print(p)
